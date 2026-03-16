@@ -26,7 +26,9 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('/')
+            ->brandLogo(asset('images/nerdify-logo.svg'))
+            ->darkModeBrandLogo(asset('images/nerdify-dark-logo.svg'))
             ->login()
             ->colors([
                 'primary' => Color::Amber,

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bebe24a93919ca70a9553a735b3403e8",
+    "content-hash": "d90133635c6fd481e03bbd375d54b680",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -3405,6 +3405,105 @@
             "time": "2026-01-02T08:56:05+00:00"
         },
         {
+            "name": "nakanakaii/countries",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nakanakaii/countries.git",
+                "reference": "1e4c0b3aee3454afb052bd152f264399df450e42"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nakanakaii/countries/zipball/1e4c0b3aee3454afb052bd152f264399df450e42",
+                "reference": "1e4c0b3aee3454afb052bd152f264399df450e42",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "*",
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Nakanakaii\\Countries\\CountriesServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nakanakaii\\Countries\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ahmed D. ALi",
+                    "email": "ahmed.dahan.ali@gmail.com"
+                }
+            ],
+            "description": "This package is a user-friendly Laravel package that provides a list of countries along with their codes, flags, phone number lengths, and shortcodes. It simplifies the process of accessing country-related information, making it easy for developers to integrate into their applications.",
+            "homepage": "https://github.com/nakanakaii/countries",
+            "support": {
+                "issues": "https://github.com/nakanakaii/countries/issues",
+                "source": "https://github.com/nakanakaii/countries/tree/v1.1.0"
+            },
+            "time": "2025-12-06T04:36:54+00:00"
+        },
+        {
+            "name": "nakanakaii/filament-countries",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nakanakaii/filament-countries.git",
+                "reference": "010ffb27a2eba600e3800e1dc553a5d031616b7d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nakanakaii/filament-countries/zipball/010ffb27a2eba600e3800e1dc553a5d031616b7d",
+                "reference": "010ffb27a2eba600e3800e1dc553a5d031616b7d",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^5.0|^4.0",
+                "nakanakaii/countries": "^1.1",
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Nakanakaii\\FilamentCountries\\FilamentCountriesServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nakanakaii\\FilamentCountries\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ahmed Dahan",
+                    "email": "ahmed.dahan.ali@gmail.com"
+                }
+            ],
+            "description": "This Package is a wrapper around `nakanakaii/countries` for filamentPHP",
+            "homepage": "https://github.com/nakanakaii/filament-countries",
+            "support": {
+                "issues": "https://github.com/nakanakaii/filament-countries/issues",
+                "source": "https://github.com/nakanakaii/filament-countries"
+            },
+            "time": "2026-03-02T03:47:42+00:00"
+        },
+        {
             "name": "nesbot/carbon",
             "version": "3.11.3",
             "source": {
@@ -6168,6 +6267,96 @@
             "time": "2026-03-06T16:33:18+00:00"
         },
         {
+            "name": "symfony/intl",
+            "version": "v7.4.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/intl.git",
+                "reference": "6d6a398b18f73b3110140dbb030dcee2ae4ea81f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/intl/zipball/6d6a398b18f73b3110140dbb030dcee2ae4ea81f",
+                "reference": "6d6a398b18f73b3110140dbb030dcee2ae4ea81f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/deprecation-contracts": "^2.5|^3"
+            },
+            "conflict": {
+                "symfony/string": "<7.1"
+            },
+            "require-dev": {
+                "symfony/filesystem": "^6.4|^7.0|^8.0",
+                "symfony/var-exporter": "^6.4|^7.0|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Intl\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/",
+                    "/Resources/data/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bernhard Schussek",
+                    "email": "bschussek@gmail.com"
+                },
+                {
+                    "name": "Eriksen Costa",
+                    "email": "eriksen.costa@infranology.com.br"
+                },
+                {
+                    "name": "Igor Wiedler",
+                    "email": "igor@wiedler.ch"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides access to the localization data of the ICU library",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "i18n",
+                "icu",
+                "internationalization",
+                "intl",
+                "l10n",
+                "localization"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/intl/tree/v7.4.6"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-02-09T09:33:46+00:00"
+        },
+        {
             "name": "symfony/mailer",
             "version": "v7.4.6",
             "source": {
@@ -7835,6 +8024,59 @@
                 }
             ],
             "time": "2026-02-15T10:53:20+00:00"
+        },
+        {
+            "name": "tapp/filament-timezone-field",
+            "version": "v3.0.13",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TappNetwork/filament-timezone-field.git",
+                "reference": "e4e2e4ac155f7f09e8d40ee9311c134747c57d0c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TappNetwork/filament-timezone-field/zipball/e4e2e4ac155f7f09e8d40ee9311c134747c57d0c",
+                "reference": "e4e2e4ac155f7f09e8d40ee9311c134747c57d0c",
+                "shasum": ""
+            },
+            "require": {
+                "symfony/intl": "^7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Tapp\\FilamentTimezoneField\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Tapp Network",
+                    "email": "steve@tappnetwork.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Tapp Network",
+                    "email": "andreia.bohner@tappnetwork.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Filament timezone field.",
+            "homepage": "https://github.com/TappNetwork/filament-timezone-field",
+            "keywords": [
+                "filament",
+                "laravel",
+                "tapp network",
+                "timezone"
+            ],
+            "support": {
+                "issues": "https://github.com/TappNetwork/filament-timezone-field/issues",
+                "source": "https://github.com/TappNetwork/filament-timezone-field"
+            },
+            "time": "2026-01-28T14:20:25+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",

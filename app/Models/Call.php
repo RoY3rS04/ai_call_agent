@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CallStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,10 @@ class Call extends Model
 {
     /** @use HasFactory<\Database\Factories\CallFactory> */
     use HasFactory;
+
+    protected $casts = [
+      'status' => CallStatus::class,
+    ];
 
     public function customer(): BelongsTo
     {

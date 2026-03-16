@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\Enums\CallRoles;
+use App\Enums\CallRoles;
 use App\Models\Call;
 use App\Models\CallMessage;
 use Illuminate\Database\Eloquent\Factories\Factory;

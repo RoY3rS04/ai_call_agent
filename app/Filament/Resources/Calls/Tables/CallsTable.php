@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Customers\Tables;
+namespace App\Filament\Resources\Calls\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -9,27 +9,26 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class CustomersTable
+class CallsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
+                TextColumn::make('customer.id')
                     ->searchable(),
-                TextColumn::make('first_name')
+                TextColumn::make('twilio_call_sid')
                     ->searchable(),
-                TextColumn::make('last_name')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('phone')
-                    ->searchable(),
-                TextColumn::make('timezone')
-                    ->searchable(),
-                TextColumn::make('lead_source')
-                    ->sortable()
+                TextColumn::make('start_time')
+                    ->dateTime()
+                    ->sortable(),
+                TextColumn::make('end_time')
+                    ->dateTime()
+                    ->sortable(),
+                TextColumn::make('duration')
+                    ->time()
+                    ->sortable(),
+                TextColumn::make('status')
                     ->badge()
                     ->searchable(),
                 TextColumn::make('created_at')
