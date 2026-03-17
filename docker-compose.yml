@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:8080"
-      - "443:8443"
     volumes:
       - .:/var/www/html
     environment:
@@ -30,6 +29,33 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+    command: [ "php", "/var/www/html/artisan", "queue:work", "--tries=3" ]
+    stop_signal: SIGTERM
+    healthcheck:
+      # This is our native healthcheck script for the queue
+      test: [ "CMD", "healthcheck-queue" ]
+      start_period: 10s
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+    command: [ "php", "/var/www/html/artisan", "reverb:start", "--port=8000" ]
+    ports:
+      - "8080:8000"
+    stop_signal: SIGTERM
+    healthcheck:
+      test: [ "CMD", "healthcheck-reverb" ]
+      start_period: 10s
 
 volumes:
   db_data:
