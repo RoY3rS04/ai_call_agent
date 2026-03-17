@@ -13,7 +13,4 @@ window.Echo = new Echo({
     enabledTransports: ['ws', 'wss'],
 });
 
-window.Echo.channel('App.Models.User.1')
-    .listen('.test-event', (e) => {
-        console.log('Event received:', e);
-    });
+new WebSocket()

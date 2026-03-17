@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+    ],
+
+    'eleven-labs' => [
+        'api_key' => env('ELEVEN_LABS_API_KEY'),
+        'voice_id' => env('ELEVEN_LABS_VOICE', 'MFZUKuGQUsGJPQjTS4wC'),
+    ]
+
 ];
