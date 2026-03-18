@@ -15,7 +15,7 @@ class CallsTable
     {
         return $table
             ->columns([
-                TextColumn::make('customer.id')
+                TextColumn::make('customer.first_name')
                     ->searchable(),
                 TextColumn::make('twilio_call_sid')
                     ->searchable(),
@@ -44,7 +44,6 @@ class CallsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
                 ViewAction::make(),
             ])
             ->toolbarActions([

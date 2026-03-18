@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Companies\Schemas;
 
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Nakanakaii\FilamentCountries\Forms\Components\CountrySelect;
 
@@ -12,11 +13,15 @@ class CompanyForm
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->required(),
-                CountrySelect::make('country')
-                    ->displayFlags()
-                    ->required()
+                Section::make('Company Information')
+                    ->columnSpanFull()
+                ->schema([
+                    TextInput::make('name')
+                        ->required(),
+                    CountrySelect::make('country')
+                        ->displayFlags()
+                        ->required()
+                ])
             ]);
     }
 }

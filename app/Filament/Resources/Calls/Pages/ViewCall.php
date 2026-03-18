@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Calls\Pages;
 
 use App\Filament\Resources\Calls\CallResource;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -13,7 +14,7 @@ class ViewCall extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            DeleteAction::make()
         ];
     }
 }

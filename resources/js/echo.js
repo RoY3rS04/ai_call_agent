@@ -13,4 +13,22 @@ window.Echo = new Echo({
     enabledTransports: ['ws', 'wss'],
 });
 
-new WebSocket()
+const socket = new WebSocket('wss://' + import.meta.env.VITE_GO_WEBSOCKET_SERVER_HOST)
+
+socket.onopen = (event) => {
+    console.log('Connected to the server!');
+
+    // 2. Now it's safe to send data
+    socket.send(JSON.stringify({
+        title: 'oe',
+        data: {
+            oe: 'que onda',
+            number: 1
+        }
+    }));
+};
+
+// Good practice: handle errors too
+socket.addEventListener("error", (event) => {
+    console.log("WebSocket error: ", event);
+});

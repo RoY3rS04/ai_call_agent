@@ -15,7 +15,7 @@ class CallForm
         return $schema
             ->components([
                 Select::make('customer_id')
-                    ->relationship('customer', 'id')
+                    ->relationship('customer', 'first_name')
                     ->required(),
                 TextInput::make('twilio_call_sid')
                     ->required(),

@@ -42,6 +42,11 @@ return [
     'eleven-labs' => [
         'api_key' => env('ELEVEN_LABS_API_KEY'),
         'voice_id' => env('ELEVEN_LABS_VOICE', 'MFZUKuGQUsGJPQjTS4wC'),
+    ],
+
+    'go_websocket_server' => [
+        'host' => env('GO_WEBSOCKET_SERVER_HOST'),
+        'port' => env('GO_WEBSOCKET_SERVER_PORT'),
     ]
 
 ];

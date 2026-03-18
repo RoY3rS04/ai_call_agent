@@ -15,7 +15,7 @@ class TwilioCallController extends Controller
 
         $conversationRelay = $connect->conversationRelay([
             'ttsProvider' => 'ElevenLabs',
-            'url' => 'wss://' . env('CONVERSATION_RELAY_HOST'),
+            'url' => 'wss://' . config('services.go_websocket_server.host'),
             'voice' => [
                 'provider' => 'ElevenLabs',
                 'voice_id' => config('services.eleven-labs.voice_id'),
