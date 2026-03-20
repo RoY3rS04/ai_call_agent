@@ -17,6 +17,9 @@ class ValidateTwilioRequest
     public function handle(Request $request, Closure $next): Response
     {
 
+        \Log::info($request->all());
+        \Log::info($request->headers);
+        \Log::info($request->fullUrl());
         $signature = $request->header('X-Twilio-Signature');
 
         $validator = new RequestValidator(config('services.twilio.auth_token'));
