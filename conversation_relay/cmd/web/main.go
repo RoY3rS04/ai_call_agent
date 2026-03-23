@@ -73,6 +73,7 @@ func (server *WebSocketServer) reader(conn *websocket.Conn) {
 			log.Println(err)
 			return
 		}
+
 		// print out that message for clarity
 		server.redisClient.Publish(context.Background(), "twilio:inbound", string(p))
 		fmt.Println(string(p))

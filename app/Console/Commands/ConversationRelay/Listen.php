@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\ConversationRelay;
 
+use App\Enums\TwilioMessageType;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
@@ -27,8 +28,26 @@ class Listen extends Command
     public function handle(): void
     {
         Redis::connection('pub-sub')->subscribe(['twilio:inbound'], function ($message) {
-            // TODO: AI AGENT WILL RESPOND
-            echo $message . "\n";
+            $message = json_decode($message, true);
+
+            match ($message['type']) {
+                TwilioMessageType::SETUP->value => null, //TODO: START THE Customer json blob
+                TwilioMessageType::PROMPT->value => (
+                   function() {
+                       // TODO: SEND TO AI
+                   }
+                )(),
+                TwilioMessageType::INTERRUPT->value => (
+                    function() {
+                        // TODO:
+                    }
+                )(),
+                TwilioMessageType::ERROR->value => (
+                    function() {
+                        // TODO:
+                    }
+                )()
+            };
         });
     }
 }
