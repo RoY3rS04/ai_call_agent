@@ -10,7 +10,7 @@ func (server *WebSocketServer) wssEndpoint(w http.ResponseWriter, r *http.Reques
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-	ws, err := upgrader.Upgrade(w, r, nil)
+	connection, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
 		log.Println(err)
@@ -19,7 +19,7 @@ func (server *WebSocketServer) wssEndpoint(w http.ResponseWriter, r *http.Reques
 
 	log.Println("Client connected")
 
-	reader(ws)
+	server.reader(connection)
 }
 
 func (server *WebSocketServer) pingRedis(w http.ResponseWriter, r *http.Request) {

@@ -62,7 +62,7 @@ services:
     working_dir: /var/www/html/conversation_relay
     volumes:
       - .:/var/www/html
-    command: ["go", "run", "/var/www/html/conversation_relay/main.go"]
+    command: ["go", "run", "/var/www/html/conversation_relay/cmd/web"]
     ports:
       - "3000:3000"
     depends_on:

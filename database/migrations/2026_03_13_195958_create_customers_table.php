@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email');
             $table->string('phone');
-            $table->string('timezone');
+            $table->string('timezone')->default('UTC');
             $table->enum('lead_source', \App\Enums\LeadSource::cases());
             $table->timestamps();
         });

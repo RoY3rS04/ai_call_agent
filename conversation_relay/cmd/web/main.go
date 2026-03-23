@@ -65,7 +65,7 @@ func main() {
 	log.Fatal(err)
 }
 
-func reader(conn *websocket.Conn) {
+func (server *WebSocketServer) reader(conn *websocket.Conn) {
 	for {
 		// read in a message
 		_, p, err := conn.ReadMessage()
@@ -74,6 +74,7 @@ func reader(conn *websocket.Conn) {
 			return
 		}
 		// print out that message for clarity
+		server.redisClient.Publish(context.Background(), "twilio:inbound", string(p))
 		fmt.Println(string(p))
 	}
 }
