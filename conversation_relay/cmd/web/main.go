@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/RoY3rS04/conversation_relay/internal"
 	"github.com/gorilla/websocket"
@@ -16,6 +18,13 @@ import (
 
 type WebSocketServer struct {
 	redisClient *redis.Client
+	connections map[string]*CallSession
+	mutex       sync.RWMutex
+}
+
+type CallSession struct {
+	CallSID    string
+	Connection *websocket.Conn
 }
 
 var upgrader = websocket.Upgrader{
@@ -48,11 +57,46 @@ func main() {
 
 	server := WebSocketServer{
 		redisClient: redisClient,
+		connections: make(map[string]*CallSession),
+		mutex:       sync.RWMutex{},
 	}
 
-	go server.SubscribeToRedisChannel(context.Background(), "twilio:outbound", func(msg string) {
-		log.Println("Received message from Redis channel callback:", msg)
-	})
+	go server.SubscribeToRedisChannel(
+		context.Background(),
+		"twilio:outbound",
+		func(msg string) {
+
+			textTokenMsg := internal.TextTokenMessage{}
+
+			err := json.Unmarshal([]byte(msg), &textTokenMsg)
+			if err != nil {
+				log.Println("Error unmarshalling message from Redis:", err)
+				return
+			}
+
+			server.mutex.RLock()
+			session, exists := server.connections[textTokenMsg.CallSID]
+			server.mutex.RUnlock()
+
+			if !exists {
+				log.Printf("No active WebSocket connection for CallSID: %s\n", textTokenMsg.CallSID)
+				return
+			}
+
+			jsonMsg, err := json.Marshal(textTokenMsg.Data)
+
+			if err != nil {
+				log.Println("Error marshalling message to JSON:", err)
+				return
+			}
+
+			err = session.Connection.WriteMessage(websocket.TextMessage, []byte(jsonMsg))
+			if err != nil {
+				log.Println("Error writing message to WebSocket:", err)
+				return
+			}
+		},
+	)
 
 	mux := http.NewServeMux()
 
@@ -65,17 +109,50 @@ func main() {
 	log.Fatal(err)
 }
 
-func (server *WebSocketServer) reader(conn *websocket.Conn) {
+func (server *WebSocketServer) reader(callSession *CallSession) {
 	for {
 		// read in a message
-		_, p, err := conn.ReadMessage()
+		_, p, err := callSession.Connection.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		twilioMessage := internal.GetTwilioMessage(p)
+		if twilioMessage == nil {
+			log.Println("Failed to process Twilio message")
+			return
+		}
+
+		switch msg := twilioMessage.(type) {
+		case internal.SetupMessage:
+			server.mutex.Lock()
+			callSession.CallSID = msg.CallSID
+			server.connections[msg.CallSID] = callSession
+			server.mutex.Unlock()
+		}
+
+		data := struct {
+			CallSid string `json:"callSid"`
+			Data    any    `json:"data"`
+		}{
+			CallSid: callSession.CallSID,
+			Data:    string(p),
+		}
+
+		jsonData, err := json.Marshal(data)
+
+		if err != nil {
+			log.Println("Error marshalling message to JSON:", err)
+			return
+		}
+
 		// print out that message for clarity
-		server.redisClient.Publish(context.Background(), "twilio:inbound", string(p))
+		server.redisClient.Publish(
+			context.Background(),
+			"twilio:inbound",
+			string(jsonData),
+		)
 		fmt.Println(string(p))
 	}
 }

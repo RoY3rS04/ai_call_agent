@@ -77,6 +77,11 @@ type ErrorMessage struct {
 
 type TextTokenMessage struct {
 	TwilioMessage
+	CallSID string           `json:"callSid"`
+	Data    TextTokenPayload `json:"data"`
+}
+
+type TextTokenPayload struct {
 	Token         string `json:"token"`
 	Last          bool   `json:"last"`
 	Interruptible bool   `json:"interruptible"`

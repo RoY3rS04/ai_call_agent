@@ -19,7 +19,11 @@ func (server *WebSocketServer) wssEndpoint(w http.ResponseWriter, r *http.Reques
 
 	log.Println("Client connected")
 
-	server.reader(connection)
+	callSession := &CallSession{
+		Connection: connection,
+	}
+
+	server.reader(callSession)
 }
 
 func (server *WebSocketServer) pingRedis(w http.ResponseWriter, r *http.Request) {
