@@ -66,33 +66,35 @@ func main() {
 		"twilio:outbound",
 		func(msg string) {
 
-			textTokenMsg := internal.TextTokenMessage{}
-
-			err := json.Unmarshal([]byte(msg), &textTokenMsg)
-			if err != nil {
-				log.Println("Error unmarshalling message from Redis:", err)
+			twilioMessage := internal.GetTwilioMessage([]byte(msg))
+			if twilioMessage == nil {
+				log.Println("Failed to process Twilio message")
 				return
 			}
 
-			server.mutex.RLock()
-			session, exists := server.connections[textTokenMsg.CallSID]
-			server.mutex.RUnlock()
+			switch msg := twilioMessage.(type) {
+			case internal.TextTokenMessage:
+				session := server.getCallSession(msg.CallSID)
 
-			if !exists {
-				log.Printf("No active WebSocket connection for CallSID: %s\n", textTokenMsg.CallSID)
-				return
-			}
+				if session == nil {
+					return
+				}
 
-			jsonMsg, err := json.Marshal(textTokenMsg.Data)
+				jsonMsg, err := json.Marshal(msg.Data)
 
-			if err != nil {
-				log.Println("Error marshalling message to JSON:", err)
-				return
-			}
+				if err != nil {
+					log.Println("Error marshalling message data to JSON:", err)
+					return
+				}
 
-			err = session.Connection.WriteMessage(websocket.TextMessage, []byte(jsonMsg))
-			if err != nil {
-				log.Println("Error writing message to WebSocket:", err)
+				err = session.Connection.WriteMessage(websocket.TextMessage, []byte(jsonMsg))
+				if err != nil {
+					log.Println("Error writing message to WebSocket:", err)
+					return
+				}
+
+			default:
+				log.Println("Received unsupported message type from Redis")
 				return
 			}
 		},
@@ -126,10 +128,7 @@ func (server *WebSocketServer) reader(callSession *CallSession) {
 
 		switch msg := twilioMessage.(type) {
 		case internal.SetupMessage:
-			server.mutex.Lock()
-			callSession.CallSID = msg.CallSID
-			server.connections[msg.CallSID] = callSession
-			server.mutex.Unlock()
+			server.setCallSession(msg.CallSID, callSession)
 		}
 
 		data := struct {
@@ -155,4 +154,24 @@ func (server *WebSocketServer) reader(callSession *CallSession) {
 		)
 		fmt.Println(string(p))
 	}
+}
+
+func (server *WebSocketServer) getCallSession(callSID string) *CallSession {
+	server.mutex.RLock()
+	session, exists := server.connections[callSID]
+	server.mutex.RUnlock()
+
+	if !exists {
+		log.Printf("No active WebSocket connection for CallSID: %s\n", callSID)
+		return nil
+	}
+
+	return session
+}
+
+func (server *WebSocketServer) setCallSession(callSID string, session *CallSession) {
+	server.mutex.Lock()
+	session.CallSID = callSID
+	server.connections[callSID] = session
+	server.mutex.Unlock()
 }

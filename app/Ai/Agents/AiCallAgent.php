@@ -2,18 +2,16 @@
 
 namespace App\Ai\Agents;
 
-use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
-use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class AiCallAgent implements Agent, Conversational, HasStructuredOutput, HasTools
+class AiCallAgent implements Agent, Conversational, HasTools
 {
     use Promptable, RemembersConversations;
 
@@ -43,16 +41,5 @@ class AiCallAgent implements Agent, Conversational, HasStructuredOutput, HasTool
     public function tools(): iterable
     {
         return [];
-    }
-
-    /**
-     * Get the agent's structured output schema definition.
-     */
-    public function schema(JsonSchema $schema): array
-    {
-        return [
-            'response' => $schema->string()->required(),
-            'created_at' => $schema->string()->required(),
-        ];
     }
 }

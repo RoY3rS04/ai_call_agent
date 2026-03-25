@@ -6,6 +6,8 @@ use App\Ai\Agents\AiCallAgent;
 use App\Enums\TwilioMessageType;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
+use Laravel\Ai\Streaming\Events\TextDelta;
+use Throwable;
 
 class Listen extends Command
 {
@@ -30,38 +32,69 @@ class Listen extends Command
     {
         Redis::connection('pub-sub')->subscribe(['twilio:inbound'], function ($message) {
             $jsonMsg = json_decode($message, true);
-            $data = json_decode($jsonMsg['data'], true);
+            $data = is_string($jsonMsg['data'] ?? null)
+                ? json_decode($jsonMsg['data'], true)
+                : ($jsonMsg['data'] ?? []);
 
             \Log::info($data);
             echo $message . PHP_EOL;
 
-            match ($jsonMsg['data']['type']) {
+            match ($data['type'] ?? null) {
                 TwilioMessageType::SETUP->value => (
-                   function () {
+               function () {
 
                    }
                 )(), //TODO: START THE Customer json blob
                 TwilioMessageType::PROMPT->value => (
                    function() use ($data, $jsonMsg) {
+                       $callSid = $jsonMsg['callSid'] ?? null;
+                       $voicePrompt = $data['voicePrompt'] ?? null;
 
-                       echo 'prompt: ' . $data['voicePrompt'] . PHP_EOL;
+                       if (! $callSid || ! $voicePrompt) {
+                           \Log::warning('Missing call SID or voice prompt for Twilio prompt message.', [
+                               'message' => $jsonMsg,
+                           ]);
 
-                       $resp = (new AiCallAgent)
-                           ->prompt($data['voicePrompt']);
+                           return;
+                       }
 
-                       \Log::info($resp);
+                       echo 'prompt: ' . $voicePrompt . PHP_EOL;
 
-                       Redis::connection('pub-sub')
-                           ->publish('twilio:outbound', json_encode([
-                               'callSid' => $jsonMsg['callSid'],
-                               'data' => [
-                                   'type' => 'text',
-                                   'text' => $resp['response'],
-                                   'last' => false,
-                                   'interruptible' => false,
-                                   'preemptible' => false,
-                               ]
-                           ]));
+                       $fullResponse = '';
+
+                       try {
+                           (new AiCallAgent)
+                               ->stream($voicePrompt)
+                               ->each(function ($event) use ($callSid, &$fullResponse) {
+                                   if (! $event instanceof TextDelta || $event->delta === '') {
+                                       return;
+                                   }
+
+                                   $fullResponse .= $event->delta;
+
+                                   $this->publishTextToken(
+                                       callSid: $callSid,
+                                       token: $event->delta,
+                                       last: false,
+                                   );
+                               });
+
+                           $this->publishTextToken(
+                               callSid: $callSid,
+                               token: '',
+                               last: true,
+                           );
+
+                           \Log::info('Published streamed AI response to Twilio.', [
+                               'callSid' => $callSid,
+                               'response' => $fullResponse,
+                           ]);
+                       } catch (Throwable $e) {
+                           \Log::error('Failed streaming AI response to Twilio.', [
+                               'callSid' => $callSid,
+                               'error' => $e->getMessage(),
+                           ]);
+                       }
                    }
                 )(),
                 TwilioMessageType::INTERRUPT->value => (
@@ -76,5 +109,25 @@ class Listen extends Command
                 )()
             };
         });
+    }
+
+    protected function publishTextToken(
+        string $callSid,
+        string $token,
+        bool $last = false,
+        bool $interruptible = true,
+        bool $preemptible = true,
+    ): void {
+        Redis::connection('pub-sub')
+            ->publish('twilio:outbound', json_encode([
+                'type' => TwilioMessageType::TEXT->value,
+                'callSid' => $callSid,
+                'data' => [
+                    'token' => $token,
+                    'last' => $last,
+                    'interruptible' => $interruptible,
+                    'preemptible' => $preemptible,
+                ],
+            ]));
     }
 }
