@@ -30,7 +30,7 @@ class Listen extends Command
      */
     public function handle(): void
     {
-        Redis::connection('pub-sub')->subscribe(['twilio:inbound'], function ($message) {
+        Redis::connection('subscribe')->subscribe(['twilio:inbound'], function ($message) {
             $jsonMsg = json_decode($message, true);
             $data = is_string($jsonMsg['data'] ?? null)
                 ? json_decode($jsonMsg['data'], true)
@@ -118,8 +118,8 @@ class Listen extends Command
         bool $interruptible = true,
         bool $preemptible = true,
     ): void {
-        Redis::connection('pub-sub')
-            ->publish('twilio:outbound', json_encode([
+        echo "Publish method reached" . PHP_EOL;
+        $receivers = Redis::connection('publish')->publish('twilio:outbound', json_encode([
                 'type' => TwilioMessageType::TEXT->value,
                 'callSid' => $callSid,
                 'data' => [
@@ -129,5 +129,16 @@ class Listen extends Command
                     'preemptible' => $preemptible,
                 ],
             ]));
+
+        \Log::info('Published Twilio outbound token.', [
+            'callSid' => $callSid,
+            'payload' => [
+                'token' => $token,
+                'last' => $last,
+                'interruptible' => $interruptible,
+                'preemptible' => $preemptible,
+            ],
+            'receivers' => $receivers,
+        ]);
     }
 }

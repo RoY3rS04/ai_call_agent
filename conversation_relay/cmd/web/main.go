@@ -66,6 +66,8 @@ func main() {
 		"twilio:outbound",
 		func(msg string) {
 
+			log.Println("from redis: ", msg)
+
 			twilioMessage := internal.GetTwilioMessage([]byte(msg))
 			if twilioMessage == nil {
 				log.Println("Failed to process Twilio message")
@@ -77,10 +79,17 @@ func main() {
 				session := server.getCallSession(msg.CallSID)
 
 				if session == nil {
+					log.Println("No session found for this callSid: ", msg.CallSID)
 					return
 				}
 
-				jsonMsg, err := json.Marshal(msg.Data)
+				jsonMsg, err := json.Marshal(struct{
+					Type string `json:"type"`
+					internal.TextTokenPayload
+				}{
+					Type: string(msg.Type),
+					TextTokenPayload: msg.Data,
+				})
 
 				if err != nil {
 					log.Println("Error marshalling message data to JSON:", err)
