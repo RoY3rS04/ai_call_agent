@@ -37,11 +37,10 @@ class Listen extends Command
                 : ($jsonMsg['data'] ?? []);
 
             \Log::info($data);
-            echo $message . PHP_EOL;
 
             match ($data['type'] ?? null) {
                 TwilioMessageType::SETUP->value => (
-               function () {
+                   function () {
 
                    }
                 )(), //TODO: START THE Customer json blob

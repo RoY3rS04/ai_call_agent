@@ -20,7 +20,7 @@ class AiCallAgent implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        return 'You are responsible for taking customer information';
+        return 'You are responsible for taking customer information, avoid using * and numbers since we don\'t want a menu for now';
     }
 
     /**
