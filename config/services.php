@@ -41,7 +41,14 @@ return [
 
     'eleven-labs' => [
         'api_key' => env('ELEVEN_LABS_API_KEY'),
-        'voice_id' => env('ELEVEN_LABS_VOICE', 'MFZUKuGQUsGJPQjTS4wC'),
+        'voices' => [
+            'en' => env('ELEVEN_LABS_VOICE_EN', 'MFZUKuGQUsGJPQjTS4wC'),
+            'es' => env('ELEVEN_LABS_VOICE_ES', 'gbTn1bmCvNgk0QEAVyfM'),
+        ]
+    ],
+
+    'deepgram' => [
+        'api_key' => env('DEEPGRAM_API_KEY'),
     ],
 
     'go_websocket_server' => [

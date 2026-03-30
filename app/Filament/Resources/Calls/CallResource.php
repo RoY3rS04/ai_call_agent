@@ -7,6 +7,7 @@ use App\Filament\Resources\Calls\Pages\EditCall;
 use App\Filament\Resources\Calls\Pages\ListCalls;
 use App\Filament\Resources\Calls\Pages\ViewCall;
 use App\Filament\Resources\Calls\Schemas\CallForm;
+use App\Filament\Resources\Calls\Schemas\CallInfoList;
 use App\Filament\Resources\Calls\Tables\CallsTable;
 use App\Models\Call;
 use BackedEnum;
@@ -24,6 +25,11 @@ class CallResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return CallForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return CallInfoList::configure($schema);
     }
 
     public static function table(Table $table): Table

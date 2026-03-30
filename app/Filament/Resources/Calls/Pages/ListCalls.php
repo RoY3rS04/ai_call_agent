@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Calls\Pages;
 use App\Filament\Resources\Calls\CallResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\View\View;
 
 class ListCalls extends ListRecords
 {
@@ -15,4 +16,15 @@ class ListCalls extends ListRecords
         return [
         ];
     }
+
+    public function getFooter(): ?View
+    {
+        return \view('filament.realtime-context', [
+            'page' => 'calls-list',
+            'channels' => [
+                'calls'
+            ]
+        ]);
+    }
 }
+

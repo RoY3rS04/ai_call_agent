@@ -13,6 +13,13 @@ class Call extends Model
     /** @use HasFactory<\Database\Factories\CallFactory> */
     use HasFactory;
 
+    protected $fillable = [
+        'twilio_call_sid',
+        'start_time',
+        'end_time',
+        'status',
+    ];
+
     protected $casts = [
       'status' => CallStatus::class,
     ];

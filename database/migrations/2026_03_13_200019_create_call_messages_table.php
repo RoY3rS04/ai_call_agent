@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CallRoles;
 use App\Models\Call;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,7 +16,7 @@ return new class extends Migration
         Schema::create('call_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Call::class)->constrained();
-            $table->string('role');
+            $table->enum('role', CallRoles::cases());
             $table->text('content');
             $table->timestamps();
         });

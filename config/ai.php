@@ -76,7 +76,7 @@ return [
 
         'eleven' => [
             'driver' => 'eleven',
-            'key' => env('ELEVENLABS_API_KEY'),
+            'key' => env('ELEVEN_LABS_API_KEY'),
         ],
 
         'gemini' => [

@@ -9,4 +9,9 @@ class CallMessage extends Model
 {
     /** @use HasFactory<\Database\Factories\CallMessageFactory> */
     use HasFactory;
+
+    protected $fillable = [
+      'role',
+      'content'
+    ];
 }

@@ -14,11 +14,27 @@ class TwilioCallController extends Controller
         $connect = $response->connect();
 
         $conversationRelay = $connect->conversationRelay([
-            'ttsProvider' => 'ElevenLabs',
             'url' => 'wss://' . config('services.go_websocket_server.host'),
-            'voice' => config('services.eleven-labs.voice_id'),
+            // STT
+            'transcriptionProvider' => 'Deepgram',
+            'transcriptionLanguage' => 'multi',
+            'speechModel' => 'nova-3-general',
+
+            // TTS
+            'ttsProvider' => 'ElevenLabs',
+
             'welcomeGreeting' => 'Thank you for calling to Nerdify offices, how may I help you?',
             'interruptible' => true
+        ]);
+
+        $conversationRelay->language([
+            'code' => 'en-US',
+            'voice' => config('services.eleven-labs.voices.en')
+        ]);
+
+        $conversationRelay->language([
+            'code' => 'es-MX',
+            'voice' => config('services.eleven-labs.voices.es')
         ]);
 
         return response($response)->header('Content-Type', 'text/xml');

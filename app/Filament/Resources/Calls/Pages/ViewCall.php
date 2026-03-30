@@ -6,6 +6,7 @@ use App\Filament\Resources\Calls\CallResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Contracts\View\View;
 
 class ViewCall extends ViewRecord
 {
@@ -16,5 +17,15 @@ class ViewCall extends ViewRecord
         return [
             DeleteAction::make()
         ];
+    }
+
+    public function getFooter(): ?View
+    {
+        return \view('filament.realtime-context', [
+            'page' => 'view-call',
+            'channels' => [
+                'call.' . $this->getRecord()->twilio_call_sid,
+            ]
+        ]);
     }
 }
