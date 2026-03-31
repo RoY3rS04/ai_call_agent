@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Enums\CallRoles;
+use App\Enums\CallStatus;
 use App\Events\CallStarted;
+use App\Events\CallStatusUpdated;
 use App\Events\NewCallMessage;
 use App\Models\Call;
 use Illuminate\Console\Command;
@@ -39,6 +41,11 @@ class TestCallMessages extends Command
                 'content' => $faker->text,
                 'role' => $faker->randomElement(CallRoles::cases())
             ]);
+
+            $call->status = $faker->randomElement(CallStatus::cases());
+            $call->save();
+
+            CallStatusUpdated::dispatch($call->fresh());
 
             NewCallMessage::dispatch(
                 $call,

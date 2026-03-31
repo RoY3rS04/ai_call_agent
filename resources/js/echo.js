@@ -20,21 +20,66 @@ const Channel = {
 
 const context = document.getElementById('realtime-context');
 const callMessagesContainer = document.getElementById('call-messages');
+const subscribedChannels = new Set();
 
 document.addEventListener('livewire:navigated', () => {
+    if (! context) {
+        return;
+    }
+
     const channels = JSON.parse(context.dataset.channels)
+
+    if (context.dataset.page !== 'view-call') {
+        subscribeToChannel(Channel.CALLS, (echoChannel) => {
+            echoChannel.listen('CallStarted', ({call}) => handleCallStartedEvent(call))
+        });
+    }
+
+    if (context.dataset.page === 'calls-list') {
+        addListenerToChannel(Channel.CALLS, (echoChannel) => {
+            echoChannel.listen('CallStatusUpdated', ({callSid}) => handleCallStatusUpdatedEvent(callSid))
+        });
+    }
+
     for (const channel of channels) {
-        if (channel === Channel.CALLS) {
-            window.Echo.private(Channel.CALLS)
-                .listen('CallStarted', ({call}) => handleCallStartedEvent(call));
-        } else if (Channel.CALL_MESSAGES.test(channel)) {
-                window.Echo.private(channel)
-                    .listen('NewCallMessage', ({message, direction}) => handleNewCallMessage(message, direction));
+        if (Channel.CALL_MESSAGES.test(channel)) {
+            subscribeToChannel(channel, (echoChannel) => {
+                echoChannel
+                    .listen('NewCallMessage', ({message, direction}) => handleNewCallMessage(message, direction))
+                    .listen('CallStatusUpdated', () => {
+                        window.Livewire.dispatch('call-view-status-updated');
+                    });
+            });
         }
     }
 })
 
+function subscribeToChannel(name, registerListeners) {
+    if (subscribedChannels.has(name)) {
+        return;
+    }
+
+    const echoChannel = window.Echo.private(name);
+
+    registerListeners(echoChannel);
+
+    subscribedChannels.add(name);
+}
+
+function addListenerToChannel(channelName, registerListener) {
+    if (!subscribedChannels.has(channelName)) {
+        return;
+    }
+
+    const echoChannel = window.Echo.private(channelName)
+
+    registerListener(echoChannel);
+}
+
 function handleCallStartedEvent(call) {
+
+    window.Livewire?.dispatch('calls-table-call-started');
+
     new window.FilamentNotification()
         .title('A new call has started')
         .info()
@@ -47,9 +92,13 @@ function handleCallStartedEvent(call) {
         .send()
 }
 
+function handleCallStatusUpdatedEvent(callSid) {
+    window.Livewire.dispatch('calls-table-status-updated', {callSid})
+}
+
 function handleNewCallMessage(message, direction) {
 
-    console.log(message)
+    console.log('hey')
     if (! callMessagesContainer) {
         return;
     }

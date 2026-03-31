@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\On;
 
 class ViewCall extends ViewRecord
 {
@@ -27,5 +28,10 @@ class ViewCall extends ViewRecord
                 'calls.' . $this->getRecord()->twilio_call_sid,
             ]
         ]);
+    }
+
+    #[On('call-view-status-updated')]
+    public function refreshCallRecord(): void {
+        $this->record = $this->getRecord()->fresh();
     }
 }

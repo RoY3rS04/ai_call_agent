@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CallStatusUpdated;
+use App\Models\Call;
 use Illuminate\Http\Request;
 use Twilio\TwiML\VoiceResponse;
 
 class TwilioCallController extends Controller
 {
-    public function __invoke(Request $request)
+    public function incoming(Request $request)
     {
 
         $response = new VoiceResponse();
         $connect = $response->connect();
+
+        $connect->setAction(config('app.url') . '/webhooks/twilio/call-status');
+        $connect->setMethod('POST');
 
         $conversationRelay = $connect->conversationRelay([
             'url' => 'wss://' . config('services.go_websocket_server.host'),
@@ -38,5 +43,22 @@ class TwilioCallController extends Controller
         ]);
 
         return response($response)->header('Content-Type', 'text/xml');
+    }
+
+    public function callStatus(Request $request) {
+
+        $validated = $request->validate([
+           'callSid' => 'required',
+           'callStatus' => 'required',
+        ]);
+
+        $call = Call::find($validated['callSid'], 'twilio_call_sid');
+
+        $call->update([
+            'status' => $validated['callStatus'],
+            'duration' => $request->callDuration ?? null,
+        ]);
+
+        CallStatusUpdated::dispatch($call);
     }
 }

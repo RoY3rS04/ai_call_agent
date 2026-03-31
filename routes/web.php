@@ -9,5 +9,7 @@ Route::get('/welcome', function () {
     return view('welcome');
 });
 
-Route::post('/webhooks/twilio', TwilioCallController::class)
+Route::post('/webhooks/twilio', [TwilioCallController::class, 'incoming'])
     ->middleware('twilio');
+
+Route::post('/webhooks/twilio/call-status', [TwilioCallController::class, 'callStatus']);

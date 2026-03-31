@@ -17,6 +17,7 @@ class Call extends Model
         'twilio_call_sid',
         'start_time',
         'end_time',
+        'duration',
         'status',
     ];
 

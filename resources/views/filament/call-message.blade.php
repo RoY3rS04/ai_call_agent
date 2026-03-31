@@ -1,4 +1,4 @@
-<section class="flex flex-col gap-y-4" id="call-messages">
+<section class="flex flex-col gap-y-4" id="call-messages" wire:ignore>
     @foreach($getRecord()->callMessages as $message)
         @php
             $isCustomer = $message->role === \App\Enums\CallRoles::CUSTOMER;

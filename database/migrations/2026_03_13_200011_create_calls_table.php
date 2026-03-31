@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('twilio_call_sid');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
-            $table->time('duration');
+            $table->time('duration')->nullable();
             $table->enum('status', CallStatus::cases());
             $table->timestamps();
         });
