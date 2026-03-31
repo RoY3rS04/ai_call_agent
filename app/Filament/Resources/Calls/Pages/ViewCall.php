@@ -24,7 +24,7 @@ class ViewCall extends ViewRecord
         return \view('filament.realtime-context', [
             'page' => 'view-call',
             'channels' => [
-                'call.' . $this->getRecord()->twilio_call_sid,
+                'calls.' . $this->getRecord()->twilio_call_sid,
             ]
         ]);
     }

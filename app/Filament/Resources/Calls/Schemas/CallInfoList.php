@@ -7,6 +7,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\TextSize;
 
 class CallInfoList
 {
@@ -18,7 +19,9 @@ class CallInfoList
                     ->schema([
                         TextEntry::make('id'),
                         TextEntry::make('twilio_call_sid'),
-                        TextEntry::make('status'),
+                        TextEntry::make('status')
+                            ->badge()
+                            ->size(TextSize::Medium),
                         TextEntry::make('start_time')->dateTime(),
                         TextEntry::make('end_time')->dateTime(),
                         TextEntry::make('duration'),

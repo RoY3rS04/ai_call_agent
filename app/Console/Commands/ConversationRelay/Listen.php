@@ -9,6 +9,7 @@ use App\Enums\LanguageCode;
 use App\Enums\TwilioMessageType;
 use App\Events\CallStarted;
 use App\Events\InboundCallMessage;
+use App\Events\NewCallMessage;
 use App\Events\OutboundCallMessage;
 use App\Models\Call;
 use App\Models\CallMessage;
@@ -90,7 +91,7 @@ class Listen extends Command
                            'content' => $voicePrompt,
                        ]);
 
-                       InboundCallMessage::dispatch($callMessage);
+                       NewCallMessage::dispatch($call, $callMessage, 'inbound');
 
                        $voiceLang = match ($jsonMsg['lang']) {
                            LanguageCode::English->value => LanguageCode::English->value,
@@ -184,7 +185,7 @@ class Listen extends Command
             'content' => $token,
         ]);
 
-        OutboundCallMessage::dispatch($callMessage);
+        NewCallMessage::dispatch($call, $callMessage, 'outbound');
 
         \Log::info('Published Twilio outbound token.', [
             'callSid' => $callSid,

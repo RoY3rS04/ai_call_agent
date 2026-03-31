@@ -12,14 +12,18 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class InboundCallMessage
+class NewCallMessage implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(protected Call $call, protected CallMessage $message)
+    public function __construct(
+        protected Call $call,
+        protected CallMessage $message,
+        public string $direction
+    )
     {
         //
     }
@@ -32,14 +36,14 @@ class InboundCallMessage
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('call.' . $this->call->twilio_call_sid . '.inbound-messages'),
+            new PrivateChannel('calls.' . $this->call->twilio_call_sid),
         ];
     }
 
     public function broadcastWith(): array {
         return [
+            'direction' => $this->direction,
             'message' => $this->message,
-            'direction' => 'inbound',
         ];
     }
 }
