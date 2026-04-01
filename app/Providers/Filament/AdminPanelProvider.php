@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Widgets\CallsChart;
 use App\Filament\Widgets\LeadSourcesChart;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -36,6 +37,13 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => Color::Amber,
+            ])
+            ->userMenuItems([
+                Action::make('google-calendar')
+                    ->label('Connect Google Calendar')
+                    ->icon('heroicon-o-calendar-days')
+                    ->url(fn () => route('google.redirect'))
+                    ->sort(10),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

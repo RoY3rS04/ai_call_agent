@@ -54,6 +54,12 @@ return [
     'go_websocket_server' => [
         'host' => env('GO_WEBSOCKET_SERVER_HOST'),
         'port' => env('GO_WEBSOCKET_SERVER_PORT'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
     ]
 
 ];

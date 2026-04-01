@@ -4,14 +4,16 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements Authorizable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -22,6 +24,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'google_email',
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
+        'google_calendar_id',
+        'google_calendar_connected_at'
     ];
 
     /**
@@ -44,6 +53,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'google_access_token' => 'encrypted',
+            'google_refresh_token' => 'encrypted',
+            'google_token_expires_at' => 'datetime',
+            'google_calendar_connected_at' => 'datetime',
         ];
     }
 }
