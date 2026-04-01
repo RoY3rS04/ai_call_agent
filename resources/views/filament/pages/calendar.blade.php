@@ -1,3 +1,3 @@
 <x-filament-panels::page>
-    {{-- Page content --}}
+    <livewire:filament.calendar-grid/>
 </x-filament-panels::page>
