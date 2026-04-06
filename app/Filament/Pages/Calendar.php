@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use Illuminate\Contracts\Support\Htmlable;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
@@ -26,5 +27,10 @@ class Calendar extends Page
 //            ]);
 //
 //        dd($response->body());
+    }
+
+    public function getHeading(): string | Htmlable | null
+    {
+        return null;
     }
 }

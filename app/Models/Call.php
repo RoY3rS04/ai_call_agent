@@ -14,11 +14,13 @@ class Call extends Model
     use HasFactory;
 
     protected $fillable = [
+        'customer_id',
         'twilio_call_sid',
         'start_time',
         'end_time',
         'duration',
         'status',
+        'agent_conversation_id',
     ];
 
     protected $casts = [
@@ -33,5 +35,10 @@ class Call extends Model
     public function callMessages(): HasMany
     {
         return $this->hasMany(CallMessage::class);
+    }
+
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class);
     }
 }

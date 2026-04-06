@@ -2,22 +2,17 @@
 
 namespace App\Console\Commands\ConversationRelay;
 
-use App\Ai\Agents\AiCallAgent;
+use App\Jobs\HandleCallPrompt;
 use App\Enums\CallRoles;
 use App\Enums\CallStatus;
 use App\Enums\LanguageCode;
 use App\Enums\TwilioMessageType;
 use App\Events\CallStarted;
-use App\Events\InboundCallMessage;
 use App\Events\NewCallMessage;
-use App\Events\OutboundCallMessage;
 use App\Models\Call;
-use App\Models\CallMessage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Stringable;
-use Laravel\Ai\Streaming\Events\TextDelta;
-use Throwable;
 
 class Listen extends Command
 {
@@ -84,7 +79,7 @@ class Listen extends Command
                        ], [
                            'start_time' => \Illuminate\Support\now(),
                            'status' => CallStatus::IN_PROGRESS
-                       ])->first();
+                       ]);
 
                        $callMessage = $call->callMessages()->create([
                            'role' => CallRoles::CUSTOMER,
@@ -99,43 +94,16 @@ class Listen extends Command
                            default => LanguageCode::English->value,
                        };
 
-                       $fullResponse = '';
+                       HandleCallPrompt::dispatch(
+                           callId: $call->getKey(),
+                           voicePrompt: $voicePrompt,
+                           voiceLang: $voiceLang,
+                       );
 
-                       try {
-                           (new AiCallAgent)
-                               ->stream($voicePrompt)
-                               ->each(function ($event) use ($callSid, &$fullResponse, $voiceLang) {
-                                   if (! $event instanceof TextDelta || $event->delta === '') {
-                                       return;
-                                   }
-
-                                   $fullResponse .= $event->delta;
-
-                                   $this->publishTextToken(
-                                       callSid: $callSid,
-                                       token: $event->delta,
-                                       lang: $voiceLang,
-                                       last: false,
-                                   );
-                               });
-
-                           $this->publishTextToken(
-                               callSid: $callSid,
-                               token: '',
-                               lang: $voiceLang,
-                               last: true,
-                           );
-
-                           \Log::info('Published streamed AI response to Twilio.', [
-                               'callSid' => $callSid,
-                               'response' => $fullResponse,
-                           ]);
-                       } catch (Throwable $e) {
-                           \Log::error('Failed streaming AI response to Twilio.', [
-                               'callSid' => $callSid,
-                               'error' => $e->getMessage(),
-                           ]);
-                       }
+                       \Log::info('Queued AI call prompt for processing.', [
+                           'call_id' => $call->getKey(),
+                           'callSid' => $callSid,
+                       ]);
                    }
                 )(),
                 TwilioMessageType::INTERRUPT->value => (
@@ -152,51 +120,4 @@ class Listen extends Command
         });
     }
 
-    protected function publishTextToken(
-        string $callSid,
-        string $token,
-        string $lang,
-        bool $last = false,
-        bool $interruptible = true,
-        bool $preemptible = true,
-    ): void {
-        echo "Publish method reached" . PHP_EOL;
-        $receivers = Redis::connection('publish')->publish('twilio:outbound', json_encode([
-                'type' => TwilioMessageType::TEXT->value,
-                'callSid' => $callSid,
-                'data' => [
-                    'token' => $token,
-                    'last' => $last,
-                    'interruptible' => $interruptible,
-                    'preemptible' => $preemptible,
-                    'lang' => $lang,
-                ],
-            ]));
-
-        $call = Call::firstOrCreate([
-            'twilio_call_sid' => $callSid,
-        ], [
-            'start_time' => \Illuminate\Support\now(),
-            'status' => CallStatus::IN_PROGRESS
-        ])->first();
-
-        $callMessage = $call->callMessages()->create([
-            'role' => CallRoles::ASSISTANT,
-            'content' => $token,
-        ]);
-
-        NewCallMessage::dispatch($call, $callMessage, 'outbound');
-
-        \Log::info('Published Twilio outbound token.', [
-            'callSid' => $callSid,
-            'payload' => [
-                'token' => $token,
-                'last' => $last,
-                'interruptible' => $interruptible,
-                'preemptible' => $preemptible,
-                'lang' => $lang,
-            ],
-            'receivers' => $receivers,
-        ]);
-    }
 }

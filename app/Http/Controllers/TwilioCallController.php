@@ -28,7 +28,7 @@ class TwilioCallController extends Controller
             // TTS
             'ttsProvider' => 'ElevenLabs',
 
-            'welcomeGreeting' => 'Thank you for calling to Nerdify offices, how may I help you?',
+            'welcomeGreeting' => 'Thank you for calling Nerdify. I’m here to help schedule your meeting. To get started, what time zone are you in?',
             'interruptible' => true
         ]);
 

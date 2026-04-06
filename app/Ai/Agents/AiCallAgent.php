@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\CheckMarketingCalendar;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -20,17 +21,7 @@ class AiCallAgent implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        return 'You are responsible for taking customer information, avoid using * and numbers since we don\'t want a menu for now';
-    }
-
-    /**
-     * Get the list of messages comprising the conversation so far.
-     *
-     * @return Message[]
-     */
-    public function messages(): iterable
-    {
-        return [];
+        return 'You are responsible for taking customer information, avoid using * and numbers since we don\'t want a menu for now, use the marketing calendar in order to check if there\'s availability for the requested date and time of the meeting';
     }
 
     /**
@@ -40,6 +31,8 @@ class AiCallAgent implements Agent, Conversational, HasTools
      */
     public function tools(): iterable
     {
-        return [];
+        return [
+            CheckMarketingCalendar::class,
+        ];
     }
 }
