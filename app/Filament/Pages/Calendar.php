@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Customers\CustomerResource;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -15,18 +16,11 @@ class Calendar extends Page
     public array $calendarDays = [];
 
     public function mount(): void {
+        $user = auth()->user();
 
-//        $user = auth()->user();
-//
-//        $response = \Http::withToken($user->google_access_token)
-//            ->get("https://www.googleapis.com/calendar/v3/calendars/{$user->google_calendar_id}/events", [
-//                'timeMin' => now()->startOfMonth()->toIso8601String(),
-//                'timeMax' => now()->addMonth()->endOfMonth()->toIso8601String(),
-//                'singleEvents' => 'true',
-//                'orderBy' => 'startTime',
-//            ]);
-//
-//        dd($response->body());
+        if (! $user || blank($user->google_refresh_token) || blank($user->google_calendar_id)) {
+            $this->redirect(CustomerResource::getUrl('index'));
+        }
     }
 
     public function getHeading(): string | Htmlable | null

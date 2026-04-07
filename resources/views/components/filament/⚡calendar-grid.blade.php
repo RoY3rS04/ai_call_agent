@@ -24,10 +24,16 @@ new class extends Component {
         'Saturday' => 6
     ];
 
-    public function mount() {
+    public function mount()
+    {
         $this->activePeriodDate = now()->startOfMonth();
         $this->navigationStartDate = $this->activePeriodDate->copy();
+
         $user = auth()->user();
+
+        if (! $user || blank($user->google_refresh_token) || blank($user->google_calendar_id)) {
+            return;
+        }
 
         $response = \Http::withToken($user->getValidGoogleAccessToken())
             ->get("https://www.googleapis.com/calendar/v3/calendars/{$user->google_calendar_id}/events", [
@@ -39,7 +45,7 @@ new class extends Component {
 
         $items = $response->json('items', []);
 
-        $this->events = array_map(fn (array $event): array => $this->normalizeEvent($event), $items);
+        $this->events = array_map(fn(array $event): array => $this->normalizeEvent($event), $items);
         $this->eventsByDate = $this->mapEventsByDate($this->events);
     }
 
@@ -132,7 +138,7 @@ new class extends Component {
         }
 
         foreach ($mappedEvents as $dateKey => $dateEvents) {
-            usort($dateEvents, fn (array $left, array $right): int => $left['sortOrder'] <=> $right['sortOrder']);
+            usort($dateEvents, fn(array $left, array $right): int => $left['sortOrder'] <=> $right['sortOrder']);
             $mappedEvents[$dateKey] = $dateEvents;
         }
 
@@ -168,7 +174,8 @@ new class extends Component {
         </div>
 
         <nav class="flex justify-start sm:justify-end">
-            <div class="inline-flex rounded-2xl border border-gray-200/80 bg-white/90 p-1 shadow-sm shadow-gray-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-gray-950/80 dark:shadow-black/30">
+            <div
+                class="inline-flex rounded-2xl border border-gray-200/80 bg-white/90 p-1 shadow-sm shadow-gray-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-gray-950/80 dark:shadow-black/30">
                 @for($i = 0; $i <= $this->monthsPastCurrent; $i++)
                     @php($monthDate = $this->navigationStartDate->copy()->addMonths($i))
                     @php($monthKey = $monthDate->format('Y-m'))
@@ -190,7 +197,8 @@ new class extends Component {
 
     <div class="grid grid-cols-7 gap-3">
         @foreach(Carbon::getDays() as $day)
-            <div class="rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:border-white/5 dark:bg-white/[0.04] dark:text-gray-400">
+            <div
+                class="rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:border-white/5 dark:bg-white/[0.04] dark:text-gray-400">
                 {{ $day }}
             </div>
         @endforeach
@@ -199,49 +207,50 @@ new class extends Component {
         @foreach($this->getPeriodMonth($this->activePeriodDate) as $idx => $date)
             @if($idx === 0 && ($pos = $this->dayPositions[$date->dayName]) !== 0)
                 @for($i = 0; $i < $pos; $i++)
-                    <div class="h-[125px] rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 dark:border-white/10 dark:bg-white/[0.02]"></div>
+                    <div
+                        class="h-[125px] rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 dark:border-white/10 dark:bg-white/[0.02]"></div>
                 @endfor
             @endif
             @php($dayEvents = $this->getEventsForDate($date))
             @php($isToday = $date->isToday())
-                <div @class([
+            <div @class([
                     'flex h-[125px] flex-col rounded-2xl border p-4 shadow-sm transition',
                     'border-amber-300 bg-amber-50/80 shadow-amber-100/70 dark:border-amber-500/50 dark:bg-amber-500/10 dark:shadow-amber-950/20' => $isToday,
                     'border-gray-200 bg-white shadow-gray-200/70 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20' => ! $isToday,
                 ])>
-                    <div class="flex items-start justify-between shrink-0">
-                        <div @class([
+                <div class="flex items-start justify-between shrink-0">
+                    <div @class([
                             'text-sm font-semibold',
                             'text-amber-900 dark:text-amber-200' => $isToday,
                             'text-gray-900 dark:text-white' => ! $isToday,
                         ])>
-                            {{ $date->day }}
-                        </div>
+                        {{ $date->day }}
+                    </div>
 
-                        <div @class([
+                    <div @class([
                             'text-xs',
                             'text-amber-700/80 dark:text-amber-200/70' => $isToday,
                             'text-gray-400 dark:text-gray-500' => ! $isToday,
                         ])>
-                            {{ $date->format('D') }}
-                        </div>
-                    </div>
-
-                    <div class="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
-                        @foreach($dayEvents as $event)
-                            <button
-                                type="button"
-                                wire:click="openEventModal('{{ $event['id'] }}')"
-                                class="flex w-full items-center justify-between rounded-xl bg-amber-600 px-3 py-1 text-left text-xs font-semibold text-white shadow-sm shadow-amber-600/20 transition hover:bg-amber-500 dark:bg-amber-500 dark:text-gray-950 dark:shadow-amber-950/30 dark:hover:bg-amber-400"
-                            >
-                                <div class="truncate">{{ $event['summary'] }}</div>
-                                <div class="ml-2 shrink-0 text-[11px] text-white/80 dark:text-gray-950/75">
-                                    {{ $event['chipLabel'] }}
-                                </div>
-                            </button>
-                        @endforeach
+                        {{ $date->format('D') }}
                     </div>
                 </div>
+
+                <div class="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
+                    @foreach($dayEvents as $event)
+                        <button
+                            type="button"
+                            wire:click="openEventModal('{{ $event['id'] }}')"
+                            class="flex w-full items-center justify-between rounded-xl bg-amber-600 px-3 py-1 text-left text-xs font-semibold text-white shadow-sm shadow-amber-600/20 transition hover:bg-amber-500 dark:bg-amber-500 dark:text-gray-950 dark:shadow-amber-950/30 dark:hover:bg-amber-400"
+                        >
+                            <div class="truncate">{{ $event['summary'] }}</div>
+                            <div class="ml-2 shrink-0 text-[11px] text-white/80 dark:text-gray-950/75">
+                                {{ $event['chipLabel'] }}
+                            </div>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
 
         @endforeach
     </section>
@@ -255,7 +264,8 @@ new class extends Component {
                 aria-label="Close event modal"
             ></button>
 
-            <div class="relative z-10 w-full max-w-xl rounded-[2rem] border border-gray-200 bg-white p-6 shadow-2xl shadow-gray-300/40 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/40">
+            <div
+                class="relative z-10 w-full max-w-xl rounded-[2rem] border border-gray-200 bg-white p-6 shadow-2xl shadow-gray-300/40 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/40">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.22em] text-[#1696d8]">
@@ -277,29 +287,45 @@ new class extends Component {
 
                 <div class="mt-6 space-y-4">
                     <div class="rounded-2xl bg-gray-50 px-4 py-3 dark:bg-white/[0.03]">
-                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Summary</div>
-                        <div class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['summary'] }}</div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                            Summary
+                        </div>
+                        <div
+                            class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['summary'] }}</div>
                     </div>
 
                     <div class="rounded-2xl bg-gray-50 px-4 py-3 dark:bg-white/[0.03]">
-                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Description</div>
-                        <div class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['description'] }}</div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                            Description
+                        </div>
+                        <div
+                            class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['description'] }}</div>
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="rounded-2xl bg-gray-50 px-4 py-3 dark:bg-white/[0.03]">
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Start</div>
-                            <div class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['startLabel'] }}</div>
+                            <div
+                                class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                                Start
+                            </div>
+                            <div
+                                class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['startLabel'] }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-gray-50 px-4 py-3 dark:bg-white/[0.03]">
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">End</div>
-                            <div class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['endLabel'] }}</div>
+                            <div
+                                class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                                End
+                            </div>
+                            <div
+                                class="mt-2 text-sm text-gray-900 dark:text-white">{{ $this->selectedEvent['endLabel'] }}</div>
                         </div>
                     </div>
 
                     <div class="rounded-2xl bg-gray-50 px-4 py-3 dark:bg-white/[0.03]">
-                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Google Calendar Link</div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                            Google Calendar Link
+                        </div>
                         @if($this->selectedEvent['htmlLink'])
                             <a
                                 href="{{ $this->selectedEvent['htmlLink'] }}"

@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('/')
             ->brandLogo(asset('images/nerdify-logo.svg'))
             ->darkModeBrandLogo(asset('images/nerdify-dark-logo.svg'))
+            ->strictAuthorization()
             ->login()
             ->colors([
                 'primary' => Color::Amber,

@@ -164,6 +164,7 @@ class CheckMarketingCalendar implements Tool
 
         usort($alternatives, fn (array $left, array $right): int => strcmp($left['start_iso'], $right['start_iso']));
         $alternatives = $this->uniqueAlternativesByStart($alternatives);
+        $alternatives = $this->spreadAlternativesAcrossDays($alternatives);
         $alternatives = array_slice($alternatives, 0, self::ALTERNATIVE_LIMIT);
 
         if (! empty($alternatives)) {
@@ -247,6 +248,7 @@ class CheckMarketingCalendar implements Tool
         array $userContext,
     ): array {
         $alternatives = [];
+        $datesWithSuggestions = [];
         $candidateStart = $this->moveToNextBusinessSlot(
             $requestedStart->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES),
             $durationMinutes,
@@ -255,10 +257,15 @@ class CheckMarketingCalendar implements Tool
         while ($candidateStart->lt($searchEnd) && count($alternatives) < self::ALTERNATIVE_LIMIT) {
             $candidateEnd = $candidateStart->copy()->addMinutes($durationMinutes);
 
+            $candidateDateKey = $candidateStart->toDateString();
+
             if (
+                ! isset($datesWithSuggestions[$candidateDateKey]) &&
                 $this->slotFitsBusinessHours($candidateStart, $candidateEnd) &&
                 ! $this->slotOverlapsBusy($candidateStart, $candidateEnd, $busySlots)
             ) {
+                $datesWithSuggestions[$candidateDateKey] = true;
+
                 $alternatives[] = [
                     ...$userContext,
                     'start_iso' => $candidateStart->toIso8601String(),
@@ -379,5 +386,36 @@ class CheckMarketingCalendar implements Tool
         }
 
         return $uniqueAlternatives;
+    }
+
+    /**
+     * Prefer offering one alternative per day before falling back to additional slots on the same day.
+     *
+     * @param  array<int, array<string, mixed>>  $alternatives
+     * @return array<int, array<string, mixed>>
+     */
+    protected function spreadAlternativesAcrossDays(array $alternatives): array
+    {
+        $spreadAlternatives = [];
+        $overflowAlternatives = [];
+        $seenDays = [];
+
+        foreach ($alternatives as $alternative) {
+            $dayKey = Carbon::parse($alternative['start_iso'])->toDateString();
+
+            if (! isset($seenDays[$dayKey])) {
+                $seenDays[$dayKey] = true;
+                $spreadAlternatives[] = $alternative;
+
+                continue;
+            }
+
+            $overflowAlternatives[] = $alternative;
+        }
+
+        return [
+            ...$spreadAlternatives,
+            ...$overflowAlternatives,
+        ];
     }
 }

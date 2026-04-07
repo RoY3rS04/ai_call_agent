@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('call_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Call::class)->constrained();
+            $table->foreignIdFor(Call::class)->constrained()->cascadeOnDelete();
             $table->enum('role', CallRoles::cases());
             $table->text('content');
             $table->timestamps();
