@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CallStatus;
 use App\Events\CallStatusUpdated;
 use App\Models\Call;
 use Illuminate\Http\Request;
@@ -56,7 +57,7 @@ class TwilioCallController extends Controller
             ->first();
 
         $call->update([
-            'status' => $validated['callStatus'],
+            'status' => CallStatus::tryFrom(ucwords(strtolower($validated['callStatus']))) ?? CallStatus::IN_PROGRESS,
             'duration' => $request->callDuration ?? null,
         ]);
 

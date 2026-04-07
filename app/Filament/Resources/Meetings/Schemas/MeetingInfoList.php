@@ -40,6 +40,9 @@ class MeetingInfoList
                         TextEntry::make('google_calendar_event_id')
                             ->label('Google Calendar event ID')
                             ->placeholder('-'),
+                        TextEntry::make('reason')
+                            ->placeholder('-')
+                            ->columnSpanFull(),
                         TextEntry::make('created_at')
                             ->dateTime(),
                     ]),

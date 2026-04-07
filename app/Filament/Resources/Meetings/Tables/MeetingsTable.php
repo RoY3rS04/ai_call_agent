@@ -42,6 +42,10 @@ class MeetingsTable
                     ->badge()
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('reason')
+                    ->limit(40)
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('source')
                     ->badge()
                     ->searchable(),

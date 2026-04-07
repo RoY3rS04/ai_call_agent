@@ -24,6 +24,7 @@ class Meeting extends Model
         'status',
         'confirmed_at',
         'source',
+        'reason',
         'notes',
     ];
 

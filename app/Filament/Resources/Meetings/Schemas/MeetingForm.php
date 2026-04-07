@@ -57,6 +57,9 @@ class MeetingForm
                         TextInput::make('source')
                             ->default('ai_call')
                             ->required(),
+                        Textarea::make('reason')
+                            ->rows(3)
+                            ->columnSpanFull(),
                         DateTimePicker::make('confirmed_at')
                             ->seconds(false),
                         TextInput::make('google_calendar_event_id')
