@@ -83,11 +83,11 @@ func main() {
 					return
 				}
 
-				jsonMsg, err := json.Marshal(struct{
+				jsonMsg, err := json.Marshal(struct {
 					Type string `json:"type"`
 					internal.TextTokenPayload
 				}{
-					Type: string(msg.Type),
+					Type:             string(msg.Type),
 					TextTokenPayload: msg.Data,
 				})
 
@@ -102,6 +102,32 @@ func main() {
 					return
 				}
 
+			case internal.LanguageMessage:
+				session := server.getCallSession(msg.CallSID)
+
+				if session == nil {
+					log.Println("No session found for this callSid: ", msg.CallSID)
+					return
+				}
+
+				jsonMsg, err := json.Marshal(struct {
+					Type string `json:"type"`
+					internal.LanguagePayload
+				}{
+					Type:            string(msg.Type),
+					LanguagePayload: msg.Data,
+				})
+
+				if err != nil {
+					log.Println("Error marshalling message data to JSON:", err)
+					return
+				}
+
+				err = session.Connection.WriteMessage(websocket.TextMessage, []byte(jsonMsg))
+				if err != nil {
+					log.Println("Error writing message to WebSocket:", err)
+					return
+				}
 			default:
 				log.Println("Received unsupported message type from Redis")
 				return

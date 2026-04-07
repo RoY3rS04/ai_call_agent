@@ -24,7 +24,7 @@ class Company extends Model
 
     public function calls(): HasManyThrough
     {
-        return $this->hasManyThrough(Customer::class, Call::class);
+        return $this->hasManyThrough(Call::class, Customer::class);
     }
 
     public function meetings(): HasMany

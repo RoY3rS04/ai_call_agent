@@ -1,0 +1,22 @@
+{
+    "agents": [
+        "codex"
+    ],
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch_mcp": false,
+    "packages": [
+        "filament/filament",
+        "spatie/laravel-permission"
+    ],
+    "sail": false,
+    "skills": [
+        "ai-sdk-development",
+        "laravel-best-practices",
+        "socialite-development",
+        "pest-testing",
+        "echo-development",
+        "tailwindcss-development",
+        "laravel-permission-development"
+    ]
+}

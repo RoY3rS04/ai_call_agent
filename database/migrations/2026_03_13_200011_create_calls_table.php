@@ -15,10 +15,10 @@ return new class extends Migration
     {
         Schema::create('calls', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Customer::class)->constrained();
+            $table->foreignIdFor(Customer::class)->nullable()->constrained();
             $table->string('twilio_call_sid');
             $table->dateTime('start_time');
-            $table->dateTime('end_time');
+            $table->dateTime('end_time')->nullable();
             $table->time('duration')->nullable();
             $table->enum('status', CallStatus::cases());
             $table->timestamps();

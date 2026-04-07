@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Creating indivual structs for each type of message twilio sends (for now)
+// Create structs for messages Twilio sends to us.
 
 type TwilioMessageType string
 
@@ -73,7 +73,7 @@ type ErrorMessage struct {
 	Description string `json:"description"`
 }
 
-// Create structs for messages we could send
+// Create structs for messages the app sends to Twilio.
 
 type TextTokenMessage struct {
 	TwilioMessage
@@ -90,6 +90,11 @@ type TextTokenPayload struct {
 
 type PlayMediaMessage struct {
 	TwilioMessage
+	CallSID string           `json:"callSid"`
+	Data    PlayMediaPayload `json:"data"`
+}
+
+type PlayMediaPayload struct {
 	Source        string `json:"source"`
 	Loop          int    `json:"loop"`
 	Preemptible   bool   `json:"preemptible"`
@@ -98,17 +103,32 @@ type PlayMediaMessage struct {
 
 type DigitMessage struct {
 	TwilioMessage
+	CallSID string       `json:"callSid"`
+	Data    DigitPayload `json:"data"`
+}
+
+type DigitPayload struct {
 	Digits string `json:"digits"`
 }
 
 type LanguageMessage struct {
 	TwilioMessage
+	CallSID string          `json:"callSid"`
+	Data    LanguagePayload `json:"data"`
+}
+
+type LanguagePayload struct {
 	TtsLanguage           string `json:"ttsLanguage"`
 	TranscriptionLanguage string `json:"transcriptionLanguage"`
 }
 
 type EndSessionMessage struct {
 	TwilioMessage
+	CallSID string            `json:"callSid"`
+	Data    EndSessionPayload `json:"data"`
+}
+
+type EndSessionPayload struct {
 	HandoffData string `json:"handoffData"`
 }
 

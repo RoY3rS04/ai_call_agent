@@ -52,7 +52,8 @@ class TwilioCallController extends Controller
            'callStatus' => 'required',
         ]);
 
-        $call = Call::find($validated['callSid'], 'twilio_call_sid');
+        $call = Call::where('twilio_call_sid', $validated['callSid'])
+            ->first();
 
         $call->update([
             'status' => $validated['callStatus'],

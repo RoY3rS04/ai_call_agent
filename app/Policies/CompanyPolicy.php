@@ -22,7 +22,7 @@ class CompanyPolicy
      */
     public function view(User $user, Company $company): bool
     {
-        return $user->hasPermissionTo('manage-calls') ||
+        return $user->hasPermissionTo('manage-companies') ||
             $user->hasAnyRole(['marketing', 'admin', 'sales', 'support']);
     }
 
@@ -31,7 +31,7 @@ class CompanyPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('manage-calls') ||
+        return $user->hasPermissionTo('manage-companies') ||
             $user->hasAnyRole(['marketing', 'admin', 'sales']);
     }
 
@@ -40,7 +40,7 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company): bool
     {
-        return $user->hasPermissionTo('manage-calls') ||
+        return $user->hasPermissionTo('manage-companies') ||
             $user->hasAnyRole(['marketing', 'admin', 'sales']);
     }
 
@@ -49,12 +49,12 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company): bool
     {
-        return $user->hasPermissionTo('manage-calls') ||
+        return $user->hasPermissionTo('manage-companies') ||
             $user->hasAnyRole(['marketing', 'admin', 'sales']);
     }
 
     public function deleteAny(User $user): bool {
-        return $user->hasPermissionTo('manage-calls') ||
+        return $user->hasPermissionTo('manage-companies') ||
             $user->hasAnyRole(['marketing', 'admin', 'sales']);
     }
 

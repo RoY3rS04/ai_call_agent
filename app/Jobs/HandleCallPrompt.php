@@ -90,6 +90,13 @@ class HandleCallPrompt implements ShouldQueue
                         last: true,
                     );
 
+                    $callMessage = $call->callMessages()->create([
+                        'role' => CallRoles::ASSISTANT,
+                        'content' => $fullResponse,
+                    ]);
+
+                    NewCallMessage::dispatch($call, $callMessage, 'outbound');
+
                     Log::info('Published streamed AI response to Twilio.', [
                         'callSid' => $callSid,
                         'response' => $fullResponse,
@@ -129,13 +136,6 @@ class HandleCallPrompt implements ShouldQueue
                 'lang' => $lang,
             ],
         ]));
-
-        $callMessage = $call->callMessages()->create([
-            'role' => CallRoles::ASSISTANT,
-            'content' => $token,
-        ]);
-
-        NewCallMessage::dispatch($call, $callMessage, 'outbound');
 
         Log::info('Published Twilio outbound token.', [
             'callSid' => $call->twilio_call_sid,

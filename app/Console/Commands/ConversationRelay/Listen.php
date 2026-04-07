@@ -94,6 +94,15 @@ class Listen extends Command
                            default => LanguageCode::English->value,
                        };
 
+                       Redis::connection('publish')->publish('twilio:outbound', json_encode([
+                           'type' => TwilioMessageType::LANGUAGE->value,
+                           'callSid' => $callSid,
+                           'data' => [
+                               'ttsLanguage' => $voiceLang,
+                               'TranscriptionLanguage' => $voiceLang,
+                           ]
+                       ]));
+
                        HandleCallPrompt::dispatch(
                            callId: $call->getKey(),
                            voicePrompt: $voicePrompt,
