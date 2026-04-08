@@ -17,8 +17,8 @@ return new class extends Migration
     {
         Schema::create('meetings', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Customer::class)->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(Company::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Customer::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(Company::class)->constrained()->nullOnDelete();
             $table->foreignIdFor(Call::class)->nullable()->constrained()->nullOnDelete();
             $table->foreignId('marketing_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('start_time');

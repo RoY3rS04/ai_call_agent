@@ -4,8 +4,8 @@ namespace App\Ai\Tools;
 
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
@@ -47,7 +47,10 @@ class CheckMarketingCalendar implements Tool
         $requestedStart = Carbon::parse($request->string('book_date_time'), $request->string('timezone'));
         $durationMinutes = max($request->integer('duration_minutes', self::DEFAULT_DURATION_MINUTES), 1);
         $requestedEnd = $requestedStart->copy()->addMinutes($durationMinutes);
-        $searchEnd = $requestedStart->copy()->addWeek();
+        $currentTime = now($request->string('timezone'));
+        $requestedStartIsInPast = $requestedStart->lt($currentTime);
+        $availabilityWindowStart = $requestedStartIsInPast ? $currentTime : $requestedStart->copy();
+        $searchEnd = $availabilityWindowStart->copy()->addWeek();
         $maxBusinessDurationMinutes = max(
             (self::LUNCH_START_HOUR - self::BUSINESS_START_HOUR) * 60,
             (self::BUSINESS_END_HOUR - self::LUNCH_END_HOUR) * 60,
@@ -102,7 +105,7 @@ class CheckMarketingCalendar implements Tool
                 $response = Http::withToken($marketingUser->getValidGoogleAccessToken())
                     ->acceptJson()
                     ->post('https://www.googleapis.com/calendar/v3/freeBusy', [
-                        'timeMin' => $requestedStart->toIso8601String(),
+                        'timeMin' => $availabilityWindowStart->toIso8601String(),
                         'timeMax' => $searchEnd->toIso8601String(),
                         'timeZone' => $request->string('timezone'),
                         'items' => [
@@ -127,6 +130,7 @@ class CheckMarketingCalendar implements Tool
             );
 
             if (
+                ! $requestedStartIsInPast &&
                 $this->slotFitsBusinessHours($requestedStart, $requestedEnd) &&
                 ! $this->slotOverlapsBusy($requestedStart, $requestedEnd, $busySlots)
             ) {
@@ -149,6 +153,7 @@ class CheckMarketingCalendar implements Tool
                 ...$alternatives,
                 ...$this->findAlternativeSlots(
                     $busySlots,
+                    $availabilityWindowStart,
                     $requestedStart,
                     $searchEnd,
                     $durationMinutes,
@@ -164,14 +169,16 @@ class CheckMarketingCalendar implements Tool
 
         usort($alternatives, fn (array $left, array $right): int => strcmp($left['start_iso'], $right['start_iso']));
         $alternatives = $this->uniqueAlternativesByStart($alternatives);
-        $alternatives = $this->spreadAlternativesAcrossDays($alternatives);
+        $alternatives = $this->spreadAlternativesAcrossDays($alternatives, $requestedStart);
         $alternatives = array_slice($alternatives, 0, self::ALTERNATIVE_LIMIT);
 
         if (! empty($alternatives)) {
             return json_encode([
                 'available' => false,
                 'alternatives_found' => true,
-                'reason' => 'The requested slot is unavailable, but there are open alternatives within the next week.',
+                'reason' => $requestedStartIsInPast
+                    ? 'The requested slot is in the past, but there are open alternatives within the next week.'
+                    : 'The requested slot is unavailable, but there are open alternatives within the next week.',
                 'requested_start' => $requestedStart->toIso8601String(),
                 'requested_end' => $requestedEnd->toIso8601String(),
                 'timezone' => $request->string('timezone'),
@@ -185,7 +192,9 @@ class CheckMarketingCalendar implements Tool
         return json_encode([
             'available' => false,
             'alternatives_found' => false,
-            'reason' => 'All eligible marketing calendars are busy for the requested time and no alternatives were found within one week.',
+            'reason' => $requestedStartIsInPast
+                ? 'The requested slot is in the past and no alternatives were found within one week.'
+                : 'All eligible marketing calendars are busy for the requested time and no alternatives were found within one week.',
             'requested_start' => $requestedStart->toIso8601String(),
             'requested_end' => $requestedEnd->toIso8601String(),
             'timezone' => $request->string('timezone'),
@@ -242,43 +251,59 @@ class CheckMarketingCalendar implements Tool
      */
     protected function findAlternativeSlots(
         array $busySlots,
+        Carbon $availabilityWindowStart,
         Carbon $requestedStart,
         Carbon $searchEnd,
         int $durationMinutes,
         array $userContext,
     ): array {
         $alternatives = [];
-        $datesWithSuggestions = [];
-        $candidateStart = $this->moveToNextBusinessSlot(
-            $requestedStart->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES),
-            $durationMinutes,
-        );
+        $candidateDate = $availabilityWindowStart->copy()->startOfDay();
 
-        while ($candidateStart->lt($searchEnd) && count($alternatives) < self::ALTERNATIVE_LIMIT) {
-            $candidateEnd = $candidateStart->copy()->addMinutes($durationMinutes);
+        while ($candidateDate->lt($searchEnd) && count($alternatives) < self::ALTERNATIVE_LIMIT) {
+            if (! in_array($candidateDate->dayOfWeek, self::BUSINESS_WEEKDAYS, true)) {
+                $candidateDate = $candidateDate->copy()->addDay();
 
-            $candidateDateKey = $candidateStart->toDateString();
-
-            if (
-                ! isset($datesWithSuggestions[$candidateDateKey]) &&
-                $this->slotFitsBusinessHours($candidateStart, $candidateEnd) &&
-                ! $this->slotOverlapsBusy($candidateStart, $candidateEnd, $busySlots)
-            ) {
-                $datesWithSuggestions[$candidateDateKey] = true;
-
-                $alternatives[] = [
-                    ...$userContext,
-                    'start_iso' => $candidateStart->toIso8601String(),
-                    'end_iso' => $candidateEnd->toIso8601String(),
-                    'start_label' => $candidateStart->format('l, M j \a\t g:i A'),
-                    'end_label' => $candidateEnd->format('l, M j \a\t g:i A'),
-                ];
+                continue;
             }
 
-            $candidateStart = $this->moveToNextBusinessSlot(
-                $candidateStart->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES),
-                $durationMinutes,
+            $preferredStartForDay = $requestedStart->copy()->setDate(
+                $candidateDate->year,
+                $candidateDate->month,
+                $candidateDate->day,
             );
+
+            $availabilityStartForDay = $availabilityWindowStart->copy()->setDate(
+                $candidateDate->year,
+                $candidateDate->month,
+                $candidateDate->day,
+            );
+
+            $bestSlot = $candidateDate->isSameDay($availabilityWindowStart)
+                ? $this->findFirstAvailableSlotOnOrAfter(
+                    $busySlots,
+                    $availabilityWindowStart->equalTo($requestedStart)
+                        ? $availabilityStartForDay->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES)
+                        : $availabilityStartForDay,
+                    $candidateDate,
+                    $durationMinutes,
+                )
+                : $this->findPreferredSlotForDay(
+                    $busySlots,
+                    $candidateDate,
+                    $preferredStartForDay,
+                    $durationMinutes,
+                );
+
+            if ($bestSlot !== null) {
+                $alternatives[] = $this->formatAlternativeSlot(
+                    $bestSlot['start'],
+                    $bestSlot['end'],
+                    $userContext,
+                );
+            }
+
+            $candidateDate = $candidateDate->copy()->addDay();
         }
 
         return $alternatives;
@@ -368,6 +393,124 @@ class CheckMarketingCalendar implements Tool
     }
 
     /**
+     * @param  array<int, array{start: Carbon, end: Carbon}>  $busySlots
+     * @return array{start: Carbon, end: Carbon}|null
+     */
+    protected function findPreferredSlotForDay(
+        array $busySlots,
+        Carbon $candidateDate,
+        Carbon $preferredStart,
+        int $durationMinutes,
+    ): ?array {
+        $slotOnOrAfterPreferredTime = $this->findFirstAvailableSlotOnOrAfter(
+            $busySlots,
+            $preferredStart,
+            $candidateDate,
+            $durationMinutes,
+        );
+
+        if ($slotOnOrAfterPreferredTime !== null) {
+            return $slotOnOrAfterPreferredTime;
+        }
+
+        return $this->findLastAvailableSlotBefore(
+            $busySlots,
+            $preferredStart,
+            $candidateDate,
+            $durationMinutes,
+        );
+    }
+
+    /**
+     * @param  array<int, array{start: Carbon, end: Carbon}>  $busySlots
+     * @return array{start: Carbon, end: Carbon}|null
+     */
+    protected function findFirstAvailableSlotOnOrAfter(
+        array $busySlots,
+        Carbon $searchStart,
+        Carbon $candidateDate,
+        int $durationMinutes,
+    ): ?array {
+        $candidateStart = $this->moveToNextBusinessSlot($searchStart, $durationMinutes);
+
+        while ($candidateStart->isSameDay($candidateDate)) {
+            $candidateEnd = $candidateStart->copy()->addMinutes($durationMinutes);
+
+            if (
+                $this->slotFitsBusinessHours($candidateStart, $candidateEnd) &&
+                ! $this->slotOverlapsBusy($candidateStart, $candidateEnd, $busySlots)
+            ) {
+                return [
+                    'start' => $candidateStart,
+                    'end' => $candidateEnd,
+                ];
+            }
+
+            $candidateStart = $this->moveToNextBusinessSlot(
+                $candidateStart->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES),
+                $durationMinutes,
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, array{start: Carbon, end: Carbon}>  $busySlots
+     * @return array{start: Carbon, end: Carbon}|null
+     */
+    protected function findLastAvailableSlotBefore(
+        array $busySlots,
+        Carbon $preferredStart,
+        Carbon $candidateDate,
+        int $durationMinutes,
+    ): ?array {
+        $dayOpen = $candidateDate->copy()->startOfDay()->setTime(self::BUSINESS_START_HOUR, 0, 0);
+        $candidateStart = $this->moveToNextBusinessSlot($dayOpen, $durationMinutes);
+        $lastAvailableSlot = null;
+
+        while ($candidateStart->isSameDay($candidateDate) && $candidateStart->lt($preferredStart)) {
+            $candidateEnd = $candidateStart->copy()->addMinutes($durationMinutes);
+
+            if ($candidateEnd->gt($preferredStart)) {
+                break;
+            }
+
+            if (
+                $this->slotFitsBusinessHours($candidateStart, $candidateEnd) &&
+                ! $this->slotOverlapsBusy($candidateStart, $candidateEnd, $busySlots)
+            ) {
+                $lastAvailableSlot = [
+                    'start' => $candidateStart,
+                    'end' => $candidateEnd,
+                ];
+            }
+
+            $candidateStart = $this->moveToNextBusinessSlot(
+                $candidateStart->copy()->addMinutes(self::SLOT_INTERVAL_MINUTES),
+                $durationMinutes,
+            );
+        }
+
+        return $lastAvailableSlot;
+    }
+
+    /**
+     * @param  array<string, mixed>  $userContext
+     * @return array<string, mixed>
+     */
+    protected function formatAlternativeSlot(Carbon $start, Carbon $end, array $userContext): array
+    {
+        return [
+            ...$userContext,
+            'start_iso' => $start->toIso8601String(),
+            'end_iso' => $end->toIso8601String(),
+            'start_label' => $start->format('l, M j \a\t g:i A'),
+            'end_label' => $end->format('l, M j \a\t g:i A'),
+        ];
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $alternatives
      * @return array<int, array<string, mixed>>
      */
@@ -394,28 +537,67 @@ class CheckMarketingCalendar implements Tool
      * @param  array<int, array<string, mixed>>  $alternatives
      * @return array<int, array<string, mixed>>
      */
-    protected function spreadAlternativesAcrossDays(array $alternatives): array
+    protected function spreadAlternativesAcrossDays(array $alternatives, Carbon $requestedStart): array
     {
-        $spreadAlternatives = [];
-        $overflowAlternatives = [];
-        $seenDays = [];
+        $alternativesByDay = [];
 
         foreach ($alternatives as $alternative) {
             $dayKey = Carbon::parse($alternative['start_iso'])->toDateString();
-
-            if (! isset($seenDays[$dayKey])) {
-                $seenDays[$dayKey] = true;
-                $spreadAlternatives[] = $alternative;
-
-                continue;
-            }
-
-            $overflowAlternatives[] = $alternative;
+            $alternativesByDay[$dayKey][] = $alternative;
         }
 
-        return [
-            ...$spreadAlternatives,
-            ...$overflowAlternatives,
-        ];
+        ksort($alternativesByDay);
+
+        $spreadAlternatives = [];
+        $overflowAlternatives = [];
+
+        foreach ($alternativesByDay as $dayAlternatives) {
+            usort(
+                $dayAlternatives,
+                fn (array $left, array $right): int => $this->compareAlternativesForPreferredTime($left, $right, $requestedStart),
+            );
+
+            $spreadAlternatives[] = array_shift($dayAlternatives);
+            $overflowAlternatives = [
+                ...$overflowAlternatives,
+                ...$dayAlternatives,
+            ];
+        }
+
+        usort(
+            $overflowAlternatives,
+            fn (array $left, array $right): int => $this->compareAlternativesForPreferredTime($left, $right, $requestedStart),
+        );
+
+        return [...$spreadAlternatives, ...$overflowAlternatives];
+    }
+
+    /**
+     * @param  array<string, mixed>  $left
+     * @param  array<string, mixed>  $right
+     */
+    protected function compareAlternativesForPreferredTime(array $left, array $right, Carbon $requestedStart): int
+    {
+        $leftStart = Carbon::parse($left['start_iso'], $requestedStart->timezoneName);
+        $rightStart = Carbon::parse($right['start_iso'], $requestedStart->timezoneName);
+
+        $leftPreferredStart = $requestedStart->copy()->setDate($leftStart->year, $leftStart->month, $leftStart->day);
+        $rightPreferredStart = $requestedStart->copy()->setDate($rightStart->year, $rightStart->month, $rightStart->day);
+
+        $leftDifference = abs($leftStart->getTimestamp() - $leftPreferredStart->getTimestamp());
+        $rightDifference = abs($rightStart->getTimestamp() - $rightPreferredStart->getTimestamp());
+
+        if ($leftDifference !== $rightDifference) {
+            return $leftDifference <=> $rightDifference;
+        }
+
+        $leftStartsBeforePreferredTime = $leftStart->lt($leftPreferredStart);
+        $rightStartsBeforePreferredTime = $rightStart->lt($rightPreferredStart);
+
+        if ($leftStartsBeforePreferredTime !== $rightStartsBeforePreferredTime) {
+            return $leftStartsBeforePreferredTime <=> $rightStartsBeforePreferredTime;
+        }
+
+        return strcmp($left['start_iso'], $right['start_iso']);
     }
 }

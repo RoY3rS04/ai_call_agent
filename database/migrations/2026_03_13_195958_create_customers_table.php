@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\LeadSource;
 use App\Models\Company;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -16,11 +17,11 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Company::class)->constrained();
             $table->string('first_name');
-            $table->string('last_name');
+            $table->string('last_name')->nullable();
             $table->string('email');
             $table->string('phone');
             $table->string('timezone')->default('UTC');
-            $table->enum('lead_source', \App\Enums\LeadSource::cases());
+            $table->enum('lead_source', LeadSource::cases());
             $table->timestamps();
         });
     }
