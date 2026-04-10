@@ -17,7 +17,11 @@ class MeetingsTable
             ->columns([
                 TextColumn::make('customer.first_name')
                     ->label('Customer')
-                    ->formatStateUsing(fn ($state, $record): string => trim($record->customer?->first_name.' '.$record->customer?->last_name))
+                    ->formatStateUsing(function ($state, $record): ?string {
+                        $fullName = trim($record->customer?->first_name.' '.$record->customer?->last_name);
+
+                        return $fullName !== '' ? $fullName : null;
+                    })
                     ->searchable(query: function ($query, string $search): void {
                         $query->whereHas('customer', function ($customerQuery) use ($search): void {
                             $customerQuery
@@ -26,18 +30,23 @@ class MeetingsTable
                         });
                     }),
                 TextColumn::make('company.name')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('marketingUser.name')
                     ->label('Marketing user')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('start_time')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
                 TextColumn::make('end_time')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
                 TextColumn::make('timezone')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('status')
                     ->badge()
                     ->sortable()
@@ -62,7 +71,7 @@ class MeetingsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('start_time', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

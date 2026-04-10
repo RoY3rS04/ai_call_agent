@@ -17,9 +17,15 @@ class MeetingInfoList
                     ->schema([
                         TextEntry::make('customer.first_name')
                             ->label('Customer')
-                            ->formatStateUsing(fn ($state, $record): string => trim($record->customer?->first_name.' '.$record->customer?->last_name)),
+                            ->formatStateUsing(function ($state, $record): ?string {
+                                $fullName = trim($record->customer?->first_name.' '.$record->customer?->last_name);
+
+                                return $fullName !== '' ? $fullName : null;
+                            })
+                            ->placeholder('-'),
                         TextEntry::make('company.name')
-                            ->label('Company'),
+                            ->label('Company')
+                            ->placeholder('-'),
                         TextEntry::make('marketingUser.name')
                             ->label('Marketing user')
                             ->placeholder('-'),
@@ -30,10 +36,13 @@ class MeetingInfoList
                             ->badge(),
                         TextEntry::make('source'),
                         TextEntry::make('start_time')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->placeholder('-'),
                         TextEntry::make('end_time')
-                            ->dateTime(),
-                        TextEntry::make('timezone'),
+                            ->dateTime()
+                            ->placeholder('-'),
+                        TextEntry::make('timezone')
+                            ->placeholder('-'),
                         TextEntry::make('confirmed_at')
                             ->dateTime()
                             ->placeholder('-'),

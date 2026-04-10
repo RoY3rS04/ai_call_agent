@@ -2,7 +2,9 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\BookMarketingMeeting;
 use App\Ai\Tools\CheckMarketingCalendar;
+use App\Models\Call;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -14,6 +16,8 @@ use Stringable;
 class AiCallAgent implements Agent, Conversational, HasTools
 {
     use Promptable, RemembersConversations;
+
+    public function __construct(public Call $call) {}
 
     /**
      * Get the instructions that the agent should follow.
@@ -31,7 +35,8 @@ class AiCallAgent implements Agent, Conversational, HasTools
     public function tools(): iterable
     {
         return [
-            CheckMarketingCalendar::class,
+            new CheckMarketingCalendar,
+            new BookMarketingMeeting($this->call),
         ];
     }
 }

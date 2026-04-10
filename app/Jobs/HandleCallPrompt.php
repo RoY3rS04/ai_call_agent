@@ -59,8 +59,8 @@ class HandleCallPrompt implements ShouldQueue
 
         try {
             $agent = $call->agent_conversation_id
-                ? (new AiCallAgent)->continue($call->agent_conversation_id, as: $call)
-                : (new AiCallAgent)->forUser($call);
+                ? (new AiCallAgent($call))->continue($call->agent_conversation_id, as: $call)
+                : (new AiCallAgent($call))->forUser($call);
 
             $agent->stream($this->voicePrompt)
                 ->each(function ($event) use ($call, &$fullResponse) {

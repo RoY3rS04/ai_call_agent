@@ -9,6 +9,7 @@ use App\Models\Call;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Meeting;
+use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -59,14 +60,24 @@ class ExtractCustomerInfo implements ShouldQueue
         $name = $this->cleanString($companyData['name'] ?? null);
         $country = $this->cleanString($companyData['country'] ?? null);
 
-        if ($name === null || $country === null) {
+        if ($name === null) {
             return null;
         }
 
-        $company = Company::firstOrCreate([
-            'name' => $name,
-            'country' => $country,
-        ]);
+        $company = Company::query()
+            ->where('name', $name)
+            ->when($country !== null, fn ($query) => $query->where('country', $country))
+            ->first() ?? Company::firstOrNew([
+                'name' => $name,
+            ]);
+
+        if ($country !== null && blank($company->country)) {
+            $company->country = $country;
+        }
+
+        if (! $company->exists || $company->isDirty()) {
+            $company->save();
+        }
 
         return $company;
     }
@@ -83,31 +94,39 @@ class ExtractCustomerInfo implements ShouldQueue
         $timezone = $this->cleanString($customerData['timezone'] ?? null);
         $leadSource = LeadSource::tryFrom((string) ($customerData['lead_source'] ?? ''));
 
-        if (
-            $company === null ||
-            $firstName === null ||
-            $email === null ||
-            $phone === null ||
-            $timezone === null ||
-            $leadSource === null
-        ) {
+        if ($email === null && $phone === null) {
             return null;
         }
 
-        $customer = Customer::firstOrNew([
-            'email' => $email,
-        ]);
+        $customer = null;
 
-        $customer->fill([
+        if ($email !== null) {
+            $customer = Customer::query()
+                ->where('email', $email)
+                ->first();
+        }
+
+        if ($customer === null && $phone !== null) {
+            $customer = Customer::query()
+                ->where('phone', $phone)
+                ->first();
+        }
+
+        $customer ??= new Customer;
+
+        $customer->fill(array_filter([
             'first_name' => $firstName,
             'last_name' => $lastName,
             'email' => $email,
             'phone' => $phone,
             'timezone' => $timezone,
-            'lead_source' => $leadSource->value,
-        ]);
+            'lead_source' => $leadSource?->value,
+        ], static fn (mixed $value): bool => $value !== null));
 
-        $customer->company()->associate($company);
+        if ($company !== null) {
+            $customer->company()->associate($company);
+        }
+
         $customer->save();
 
         return $customer;
@@ -142,13 +161,6 @@ class ExtractCustomerInfo implements ShouldQueue
             'call_id' => $this->call->getKey(),
         ]);
 
-        if (
-            ! $meeting->exists &&
-            ($customer === null || $company === null || $startTime === null || $endTime === null || $timezone === null || $status === null)
-        ) {
-            return null;
-        }
-
         if ($customer !== null) {
             $meeting->customer()->associate($customer);
         }
@@ -159,21 +171,43 @@ class ExtractCustomerInfo implements ShouldQueue
 
         $meeting->call()->associate($this->call);
 
-        $meetingAttributes = array_filter([
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'timezone' => $timezone,
-            'reason' => $reason,
-            'source' => $source ?? ($meeting->exists ? null : 'ai_call'),
-            'notes' => $notes,
-            'status' => $status?->value,
-        ], static fn (mixed $value): bool => $value !== null);
+        $meetingTimezone = $timezone
+            ?? $customer?->timezone
+            ?? $this->call->customer?->timezone;
+        $startDateTime = $this->normalizeMeetingDateTime($startTime, $meetingTimezone);
+        $endDateTime = $this->normalizeMeetingDateTime($endTime, $meetingTimezone);
 
-        if ($meetingAttributes === [] && $meeting->exists) {
-            return $meeting;
+        $meetingAttributes = [];
+
+        if (! $this->meetingHasProtectedBookingFields($meeting)) {
+            $meetingAttributes = array_filter([
+                'start_time' => $startDateTime,
+                'end_time' => $endDateTime,
+                'timezone' => $meetingTimezone,
+                'status' => $status?->value ?? ($meeting->exists ? null : MeetingStatus::PENDING->value),
+            ], static fn (mixed $value): bool => $value !== null);
+        }
+
+        if ($reason !== null && $this->shouldBackfillMeetingText($meeting->reason, $meeting->exists)) {
+            $meetingAttributes['reason'] = $reason;
+        }
+
+        if ($notes !== null && $this->shouldBackfillMeetingText($meeting->notes, $meeting->exists)) {
+            $meetingAttributes['notes'] = $notes;
+        }
+
+        if ($source !== null && $this->shouldBackfillMeetingText($meeting->source, $meeting->exists)) {
+            $meetingAttributes['source'] = $source;
+        } elseif (! $meeting->exists) {
+            $meetingAttributes['source'] = 'ai_call';
         }
 
         $meeting->fill($meetingAttributes);
+
+        if ($meeting->exists && ! $meeting->isDirty()) {
+            return $meeting;
+        }
+
         $meeting->save();
 
         return $meeting;
@@ -188,5 +222,39 @@ class ExtractCustomerInfo implements ShouldQueue
         $value = trim($value);
 
         return $value === '' ? null : $value;
+    }
+
+    protected function meetingHasProtectedBookingFields(Meeting $meeting): bool
+    {
+        if (! $meeting->exists) {
+            return false;
+        }
+
+        return filled($meeting->google_calendar_event_id)
+            || $meeting->confirmed_at !== null
+            || in_array($meeting->status, [
+                MeetingStatus::CONFIRMED,
+                MeetingStatus::COMPLETED,
+                MeetingStatus::CANCELLED,
+                MeetingStatus::NO_SHOW,
+            ], true);
+    }
+
+    protected function shouldBackfillMeetingText(?string $currentValue, bool $meetingExists): bool
+    {
+        return ! $meetingExists || blank($currentValue);
+    }
+
+    protected function normalizeMeetingDateTime(?string $value, ?string $timezone): ?Carbon
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $dateTime = $timezone !== null
+            ? Carbon::parse($value, $timezone)
+            : Carbon::parse($value);
+
+        return $dateTime->setTimezone(config('app.timezone', 'UTC'));
     }
 }

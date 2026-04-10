@@ -5,9 +5,10 @@ namespace App\Filament\Resources\Meetings\Schemas;
 use App\Enums\MeetingStatus;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Tapp\FilamentTimezoneField\Forms\Components\TimezoneSelect;
 
@@ -24,13 +25,11 @@ class MeetingForm
                             ->relationship(name: 'customer', titleAttribute: 'first_name')
                             ->getOptionLabelFromRecordUsing(fn ($record): string => trim($record->first_name.' '.$record->last_name))
                             ->searchable()
-                            ->preload()
-                            ->required(),
+                            ->preload(),
                         Select::make('company_id')
                             ->relationship(name: 'company', titleAttribute: 'name')
                             ->searchable()
-                            ->preload()
-                            ->required(),
+                            ->preload(),
                         Select::make('call_id')
                             ->relationship(name: 'call', titleAttribute: 'twilio_call_sid')
                             ->searchable()
@@ -42,17 +41,18 @@ class MeetingForm
                             ->preload(),
                         DateTimePicker::make('start_time')
                             ->seconds(false)
-                            ->required(),
+                            ->required(fn (Get $get): bool => $get('status') !== MeetingStatus::PENDING->value),
                         DateTimePicker::make('end_time')
                             ->seconds(false)
-                            ->required(),
+                            ->required(fn (Get $get): bool => $get('status') !== MeetingStatus::PENDING->value),
                         TimezoneSelect::make('timezone')
                             ->searchable()
-                            ->required(),
+                            ->required(fn (Get $get): bool => $get('status') !== MeetingStatus::PENDING->value),
                         Select::make('status')
                             ->options(MeetingStatus::class)
                             ->enum(MeetingStatus::class)
                             ->default(MeetingStatus::PENDING)
+                            ->live()
                             ->required(),
                         TextInput::make('source')
                             ->default('ai_call')

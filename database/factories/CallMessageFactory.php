@@ -20,7 +20,7 @@ class CallMessageFactory extends Factory
     public function definition(): array
     {
         return [
-            'call_id' => Call::inRandomOrder()->first()->id,
+            'call_id' => Call::factory(),
             'role' => $this->faker->randomElement(CallRoles::cases()),
             'content' => $this->faker->realText(),
         ];

@@ -23,17 +23,16 @@ const callMessagesContainer = document.getElementById('call-messages');
 const subscribedChannels = new Set();
 
 document.addEventListener('livewire:navigated', () => {
+
+    subscribeToChannel(Channel.CALLS, (echoChannel) => {
+        echoChannel.listen('CallStarted', ({call}) => handleCallStartedEvent(call))
+    });
+
     if (! context) {
         return;
     }
 
     const channels = JSON.parse(context.dataset.channels)
-
-    if (context.dataset.page !== 'view-call') {
-        subscribeToChannel(Channel.CALLS, (echoChannel) => {
-            echoChannel.listen('CallStarted', ({call}) => handleCallStartedEvent(call))
-        });
-    }
 
     if (context.dataset.page === 'calls-list') {
         addListenerToChannel(Channel.CALLS, (echoChannel) => {
